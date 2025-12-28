@@ -1,0 +1,9 @@
+# Database - FIXED: Using aiosqlite for async operations
+DATABASE_URL=sqlite+aiosqlite:///./smart_drive.db
+
+# Google Drive OAuth2 (ADD YOUR CREDENTIALS)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# AI (ADD YOUR API KEY)
+GROQ_API_KEY=your-groq-api-key
