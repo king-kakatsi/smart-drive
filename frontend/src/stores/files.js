@@ -7,12 +7,14 @@ export const useFilesStore = defineStore('files', {
     localFiles: [],
     driveFiles: [],
     selectedFiles: [],
+    starredFileIds: [],
     viewMode: 'grid',
     searchQuery: '',
     isLoading: false,
     error: null,
     isUploading: false,
     uploadProgress: 0,
+    isDataLoaded: false,
     storageMetrics: {
       used: 0,
       total: 15 * 1024 * 1024 * 1024, // 15GB default
@@ -58,7 +60,7 @@ export const useFilesStore = defineStore('files', {
      * Get starred files
      */
     starredFiles: (state) => {
-      return state.allFiles.filter(file => file.isStarred || file.is_starred)
+      return state.allFiles.filter(file => state.starredFileIds.includes(file.id))
     },
 
     /**
@@ -263,6 +265,21 @@ export const useFilesStore = defineStore('files', {
     },
     
     /**
+     * Helper: Save starred file IDs to localStorage
+     */
+    saveStarredToLocalStorage() {
+      localStorage.setItem('starred_files', JSON.stringify(this.starredFileIds))
+    },
+
+    /**
+     * Helper: Load starred file IDs from localStorage
+     */
+    loadStarredFromLocalStorage() {
+      const stored = localStorage.getItem('starred_files')
+      this.starredFileIds = stored ? JSON.parse(stored) : []
+    },
+
+    /**
      * Toggle file star status
      */
     async toggleFileStar(fileId) {
@@ -271,35 +288,63 @@ export const useFilesStore = defineStore('files', {
       try {
         // Find the file in localFiles or driveFiles
         let file = this.localFiles.find(f => f.id === fileId)
-        let fileType = 'local'
 
         if (!file) {
           file = this.driveFiles.find(f => f.id === fileId)
-          fileType = 'drive'
         }
 
         if (!file) {
           throw new Error('File not found')
         }
 
-        // Toggle the star status (optimistic update)
-        const wasStarred = file.isStarred || file.is_starred
-        file.isStarred = !wasStarred
-        file.is_starred = !wasStarred
+        // Toggle the star status in our local array
+        const index = this.starredFileIds.indexOf(fileId)
+        if (index > -1) {
+          this.starredFileIds.splice(index, 1) // Unstar
+        } else {
+          this.starredFileIds.push(fileId) // Star
+        }
+
+        // Persist to localStorage
+        this.saveStarredToLocalStorage()
 
         // TODO: Call backend API when available
         // await fileService.toggleStar(fileId)
 
       } catch (error) {
         // Revert optimistic update on error
-        const file = this.localFiles.find(f => f.id === fileId) || this.driveFiles.find(f => f.id === fileId)
-        if (file) {
-          file.isStarred = !file.isStarred
-          file.is_starred = !file.is_starred
+        const index = this.starredFileIds.indexOf(fileId)
+        if (index > -1) {
+          this.starredFileIds.splice(index, 1)
+        } else {
+          this.starredFileIds.push(fileId)
         }
 
         this.error = error.detail || 'Failed to toggle star status'
         throw error
+      }
+    },
+
+    /**
+     * Initialize store (load persisted data)
+     */
+    initializeStore() {
+      this.loadStarredFromLocalStorage()
+
+      // Load view mode preference
+      const savedViewMode = localStorage.getItem('file_view_mode')
+      if (savedViewMode && (savedViewMode === 'grid' || savedViewMode === 'list')) {
+        this.viewMode = savedViewMode
+      }
+    },
+
+    /**
+     * Set view mode with persistence
+     */
+    setViewMode(mode) {
+      if (mode === 'grid' || mode === 'list') {
+        this.viewMode = mode
+        localStorage.setItem('file_view_mode', mode)
       }
     },
 

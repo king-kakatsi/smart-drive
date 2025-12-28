@@ -27,6 +27,7 @@ export function useFiles() {
 
     // Actions
     setSearchQuery: store.setSearchQuery,
+    setViewMode: store.setViewMode,
     toggleViewMode: store.toggleViewMode,
     selectFile: store.selectFile,
     toggleStar: store.toggleStar,

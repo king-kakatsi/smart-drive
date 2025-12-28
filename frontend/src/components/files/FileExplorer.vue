@@ -23,7 +23,7 @@ const props = defineProps({
     onToggleStar: Function
 })
 
-const { viewMode, searchQuery, filteredFiles } = useFiles()
+const { viewMode, searchQuery, filteredFiles, setViewMode } = useFiles()
 
 const sortBy = ref('name')
 
@@ -57,13 +57,13 @@ const sortedFiles = computed(() => {
                     <button :class="cn(
                         'p-1.5 rounded-md transition-all',
                         viewMode === 'grid' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-                    )" @click="viewMode = 'grid'">
+                    )" @click="setViewMode('grid')">
                         <LayoutGrid class="w-4 h-4" />
                     </button>
                     <button :class="cn(
                         'p-1.5 rounded-md transition-all',
                         viewMode === 'list' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-                    )" @click="viewMode = 'list'">
+                    )" @click="setViewMode('list')">
                         <List class="w-4 h-4" />
                     </button>
                 </div>
