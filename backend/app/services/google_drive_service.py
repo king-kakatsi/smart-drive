@@ -156,6 +156,28 @@ class GoogleDriveService:
                 data = await response.json()
                 return data.get("files", [])
 
+    async def get_storage_quota(
+        self,
+        database: AsyncSession,
+        user_id: int
+    ) -> Dict[str, Any]:
+        """
+        Get user's Google Drive storage quota
+        
+        Args:
+            database: Database session
+            user_id: User ID
+        
+        Returns:
+            Dict containing storage info
+        """
+        access_token = await get_valid_access_token_for_user(database, user_id)
+        
+        if not access_token:
+            raise Exception("No valid Google Drive token found for user")
+            
+        return await self.drive_client.get_storage_quota(access_token)
+
 
 # Global service instance
 google_drive_service = GoogleDriveService()

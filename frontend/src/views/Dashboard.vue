@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useFilesStore } from '@/stores/files'
+import { onMounted } from 'vue'
 import {
   FileText,
   Video,
@@ -26,18 +28,37 @@ const isDriveModalOpen = ref(false)
 const isPreviewOpen = ref(false)
 const selectedFile = ref(null)
 
-const stats = [
-  { label: 'Total Files', value: '1,284', icon: HardDrive, color: 'bg-blue-500' },
-  { label: 'Storage Used', value: '12.4 GB', icon: Cloud, color: 'bg-primary' },
-  { label: 'AI Insights', value: '42', icon: MessageSquare, color: 'bg-secondary' },
-  { label: 'Shared Files', value: '156', icon: Users, color: 'bg-purple-500' },
-]
+const filesStore = useFilesStore()
 
-const recentFiles = ref([
-  { id: 1, name: 'Project Proposal.pdf', type: 'pdf', size: '2.4 MB', updatedAt: '2 hours ago', isStarred: true },
-  { id: 2, name: 'Product Demo.mp4', type: 'mp4', size: '45.8 MB', updatedAt: '5 hours ago', isStarred: false },
-  { id: 3, name: 'Design Assets.zip', type: 'zip', size: '12.1 MB', updatedAt: 'Yesterday', isStarred: false },
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    filesStore.fetchStorageMetrics()
+    filesStore.fetchDriveFiles(10)
+  }
+})
+
+const stats = computed(() => [
+  { label: 'Total Files', value: filesStore.driveFiles.length.toString(), icon: HardDrive, color: 'bg-blue-500' },
+  { 
+    label: 'Storage Used', 
+    value: `${(filesStore.storageMetrics.used / (1024 * 1024 * 1024)).toFixed(1)} GB`, 
+    icon: Cloud, 
+    color: 'bg-primary' 
+  },
+  { label: 'AI Insights', value: '0', icon: MessageSquare, color: 'bg-secondary' },
+  { label: 'Shared Files', value: '0', icon: Users, color: 'bg-purple-500' },
 ])
+
+const recentFiles = computed(() => {
+  return filesStore.driveFiles.slice(0, 3).map(file => ({
+    id: file.id,
+    name: file.name,
+    type: file.mimeType?.split('/').pop() || 'file',
+    size: file.size ? `${(parseInt(file.size) / (1024 * 1024)).toFixed(1)} MB` : 'Unknown',
+    updatedAt: new Date(file.modifiedTime).toLocaleDateString(),
+    isStarred: false
+  }))
+})
 
 const handlePreviewFile = (file) => {
   selectedFile.value = file

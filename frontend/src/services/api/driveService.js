@@ -51,6 +51,13 @@ class DriveService {
     
     return await response.blob()
   }
+
+  /**
+   * Get storage and quota metrics
+   */
+  async getStorageMetrics() {
+    return await apiClient.get('/api/v1/drive/metrics')
+  }
 }
 
 // Export singleton instance

@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useFilesStore } from '@/stores/files'
+import { onMounted } from 'vue'
 import { 
   Home, 
   Folder, 
@@ -44,10 +46,30 @@ const navItems = [
   { name: 'Trash', icon: Trash2, path: '/trash' },
 ]
 
-const storageUsed = 12.4
-const totalGB = 15
-const storageGB = storageUsed.toFixed(1)
-const storagePercentage = (storageUsed / totalGB) * 100
+const filesStore = useFilesStore()
+
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    filesStore.fetchStorageMetrics()
+  }
+})
+
+const storageGB = computed(() => {
+  const bytes = filesStore.storageMetrics.used
+  return (bytes / (1024 * 1024 * 1024)).toFixed(1)
+})
+
+const totalGB = computed(() => {
+  const bytes = filesStore.storageMetrics.total
+  return (bytes / (1024 * 1024 * 1024)).toFixed(0)
+})
+
+const storagePercentage = computed(() => {
+  const used = filesStore.storageMetrics.used
+  const total = filesStore.storageMetrics.total
+  if (total === 0) return 0
+  return (used / total) * 100
+})
 
 const isActive = (path) => route.path === path
 </script>
@@ -99,9 +121,6 @@ const isActive = (path) => route.path === path
           <span>{{ storageGB }} GB of {{ totalGB }} GB</span>
         </div>
         <Progress :value="storagePercentage" class="h-2" />
-        <button class="w-full px-4 py-2 text-sm rounded-lg border border-border hover:bg-accent/10 transition-colors">
-          Upgrade Plan
-        </button>
       </div>
 
       <!-- User Profile -->

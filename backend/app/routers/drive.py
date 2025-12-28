@@ -150,11 +150,25 @@ async def sync_drive_files(
         )
 
 
-@router.get("/connect")
-async def connect_drive():
-    """Get Google Drive connection URL"""
-    from app.core.drive_client import get_google_auth_url
-    auth_url = get_google_auth_url()
-    return {"auth_url": auth_url, "message": "Redirect user to this URL to connect Google Drive"}
+@router.get("/metrics")
+async def get_storage_metrics(
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get user's storage and file metrics"""
+    try:
+        quota = await google_drive_service.get_storage_quota(db, user.id)
+        
+        # We can also fetch the file count here if we want, 
+        # but for now just returning the quota
+        return {
+            "quota": quota.get("storageQuota", {}),
+            "user": quota.get("user", {})
+        }
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch metrics: {str(error)}"
+        )
 
 

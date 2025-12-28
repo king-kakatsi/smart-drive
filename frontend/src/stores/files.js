@@ -12,7 +12,12 @@ export const useFilesStore = defineStore('files', {
     isLoading: false,
     error: null,
     isUploading: false,
-    uploadProgress: 0
+    uploadProgress: 0,
+    storageMetrics: {
+      used: 0,
+      total: 15 * 1024 * 1024 * 1024, // 15GB default
+      limit: 15 * 1024 * 1024 * 1024
+    }
   }),
   
   getters: {
@@ -226,6 +231,24 @@ export const useFilesStore = defineStore('files', {
      */
     toggleViewMode() {
       this.viewMode = this.viewMode === 'grid' ? 'list' : 'grid'
+    },
+    
+    /**
+     * Fetch storage metrics
+     */
+    async fetchStorageMetrics() {
+      try {
+        const response = await driveService.getStorageMetrics()
+        if (response && response.quota) {
+          this.storageMetrics = {
+            used: parseInt(response.quota.usage || 0),
+            total: parseInt(response.quota.limit || 15 * 1024 * 1024 * 1024),
+            limit: parseInt(response.quota.limit || 15 * 1024 * 1024 * 1024)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch storage metrics:', error)
+      }
     }
   }
 })

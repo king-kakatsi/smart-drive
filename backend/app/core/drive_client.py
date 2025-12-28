@@ -114,6 +114,20 @@ class GoogleDriveClient:
 
                 return await response.read()
 
+    async def get_storage_quota(self, access_token: str) -> Dict[str, Any]:
+        """Get Google Drive storage quota info"""
+        about_url = "https://www.googleapis.com/drive/v3/about"
+        headers = {"Authorization": f"Bearer {access_token}"}
+        params = {"fields": "storageQuota, user"}
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(about_url, headers=headers, params=params) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"Failed to get storage quota: {response.status} - {error_text}")
+
+                return await response.json()
+
 
 # Global Drive client instance
 drive_client = GoogleDriveClient()
