@@ -33,9 +33,13 @@ const sortedFiles = computed(() => {
 
   switch (sortBy.value) {
     case 'name':
-      return files.sort((a, b) => a.name.localeCompare(b.name))
+      return files.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
     case 'date':
-      return files.sort((a, b) => new Date(b.modifiedTime || b.updatedAt || b.createdAt) - new Date(a.modifiedTime || a.updatedAt || a.createdAt))
+      return files.sort((a, b) => {
+        const dateA = new Date(a.modifiedTime || a.updatedAt || a.createdAt || 0)
+        const dateB = new Date(b.modifiedTime || b.updatedAt || b.createdAt || 0)
+        return dateB - dateA
+      })
     case 'size':
       return files.sort((a, b) => (b.size || 0) - (a.size || 0))
     default:

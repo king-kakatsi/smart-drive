@@ -1,12 +1,12 @@
 <script setup>
-import { ref } from 'vue'
-import { useFilesStore } from '@/stores/files'
+import { ref, computed } from 'vue'
 import {
     FileText,
     Video,
     Music,
     Image as ImageIcon,
     File,
+    Folder,
     MoreVertical,
     Eye,
     MessageSquare,
@@ -15,10 +15,9 @@ import {
     Star
 } from 'lucide-vue-next'
 import { cn } from '@/utils/cn'
+import { useFilesStore } from '@/stores/files'
 import BaseBadge from '@/components/common/BaseBadge.vue'
 import Dropdown, { DropdownItem } from '@/components/common/Dropdown.vue'
-
-const filesStore = useFilesStore()
 
 const props = defineProps({
     file: {
@@ -34,15 +33,16 @@ const props = defineProps({
 const emit = defineEmits(['preview', 'open-chat', 'delete', 'download', 'toggle-star'])
 
 const isHovered = ref(false)
+const filesStore = useFilesStore()
 
-// Normalize file type from either 'type' or 'mimeType' property
-const getNormalizedFileType = (file) => {
-    return file.type || file.mimeType?.split('/').pop() || 'file'
-}
+const isFileStarred = computed(() => {
+    return filesStore.starredFileIds.includes(props.file.id)
+})
 
 const getFileIcon = (file) => {
-    const type = getNormalizedFileType(file)
-    switch (type?.toLowerCase()) {
+    // Handle both file.type and file.mimeType
+    const type = file.type || file.mimeType?.split('/').pop() || 'file'
+    switch (type.toLowerCase()) {
         case 'pdf':
         case 'doc':
         case 'docx':
@@ -60,14 +60,16 @@ const getFileIcon = (file) => {
         case 'png':
         case 'gif':
             return ImageIcon
+        case 'folder':
+            return Folder // Add folder icon for Google Drive folders
         default:
             return File
     }
 }
 
 const getIconColor = (file) => {
-    const type = getNormalizedFileType(file)
-    switch (type?.toLowerCase()) {
+    const type = file.type || file.mimeType?.split('/').pop() || 'file'
+    switch (type.toLowerCase()) {
         case 'pdf': return 'text-red-500 bg-red-50'
         case 'doc':
         case 'docx': return 'text-blue-500 bg-blue-50'
@@ -76,6 +78,7 @@ const getIconColor = (file) => {
         case 'mp3': return 'text-pink-500 bg-pink-50'
         case 'jpg':
         case 'png': return 'text-orange-500 bg-orange-50'
+        case 'folder': return 'text-yellow-600 bg-yellow-50'
         default: return 'text-gray-500 bg-gray-50'
     }
 }
@@ -114,7 +117,7 @@ const getIconColor = (file) => {
                 <button class="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition-colors"
                     @click="emit('toggle-star', file)">
                     <Star
-                        :class="cn('w-3.5 h-3.5', filesStore.starredFileIds.includes(file.id) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400')" />
+                        :class="cn('w-3.5 h-3.5', isFileStarred ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400')" />
                 </button>
             </div>
 
@@ -152,7 +155,7 @@ const getIconColor = (file) => {
 
             <div class="flex-1 min-w-0">
                 <h3 class="text-sm font-medium truncate">{{ file.name }}</h3>
-                <p class="text-[10px] text-muted-foreground">{{ getNormalizedFileType(file).toUpperCase() }} • {{ file.size }}</p>
+                <p class="text-[10px] text-muted-foreground">{{ (file.type || file.mimeType?.split('/').pop() || 'FILE').toUpperCase() }} • {{ file.size }}</p>
             </div>
 
             <div class="hidden md:block text-xs text-muted-foreground px-4">

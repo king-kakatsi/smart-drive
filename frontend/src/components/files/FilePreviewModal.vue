@@ -10,6 +10,7 @@ import {
     Music,
     Image as ImageIcon,
     File,
+    Folder,
     Clock,
     HardDrive,
     Info
@@ -25,14 +26,9 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'open-chat', 'download', 'delete', 'share'])
 
-// Normalize file type from either 'type' or 'mimeType' property
-const getNormalizedFileType = (file) => {
-    return file.type || file.mimeType?.split('/').pop() || 'file'
-}
-
 const getFileIcon = (file) => {
-    const type = getNormalizedFileType(file)
-    switch (type?.toLowerCase()) {
+    const type = file.type || file.mimeType?.split('/').pop() || 'file'
+    switch (type.toLowerCase()) {
         case 'pdf':
         case 'doc':
         case 'docx':
@@ -50,14 +46,16 @@ const getFileIcon = (file) => {
         case 'png':
         case 'gif':
             return ImageIcon
+        case 'folder':
+            return Folder
         default:
             return File
     }
 }
 
 const getIconColor = (file) => {
-    const type = getNormalizedFileType(file)
-    switch (type?.toLowerCase()) {
+    const type = file.type || file.mimeType?.split('/').pop() || 'file'
+    switch (type.toLowerCase()) {
         case 'pdf': return 'text-red-500'
         case 'doc':
         case 'docx': return 'text-blue-500'
@@ -66,20 +64,7 @@ const getIconColor = (file) => {
         case 'mp3': return 'text-pink-500'
         case 'jpg':
         case 'png': return 'text-orange-500'
-        default: return 'text-gray-500'
-    }
-}
-
-const getIconColor = (type) => {
-    switch (type?.toLowerCase()) {
-        case 'pdf': return 'text-red-500'
-        case 'doc':
-        case 'docx': return 'text-blue-500'
-        case 'mp4':
-        case 'mov': return 'text-purple-500'
-        case 'mp3': return 'text-pink-500'
-        case 'jpg':
-        case 'png': return 'text-orange-500'
+        case 'folder': return 'text-yellow-600'
         default: return 'text-gray-500'
     }
 }
@@ -98,11 +83,11 @@ const getIconColor = (type) => {
 
                 <!-- Preview Content -->
                 <div class="w-full h-full flex items-center justify-center">
-                    <template v-if="file.type === 'jpg' || file.type === 'png'">
+                    <template v-if="(file.type || file.mimeType?.split('/').pop()) === 'jpg' || (file.type || file.mimeType?.split('/').pop()) === 'png'">
                         <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop"
                             class="max-w-full max-h-full rounded-lg shadow-2xl object-contain" />
                     </template>
-                    <template v-else-if="file.type === 'mp4'">
+                    <template v-else-if="(file.type || file.mimeType?.split('/').pop()) === 'mp4'">
                         <div
                             class="w-full aspect-video bg-black rounded-lg shadow-2xl flex items-center justify-center">
                             <Video class="w-20 h-20 text-white/20" />
@@ -111,8 +96,8 @@ const getIconColor = (type) => {
                     <template v-else>
                         <div class="flex flex-col items-center gap-4">
                             <div
-                                :class="cn('w-32 h-32 rounded-2xl bg-background shadow-xl flex items-center justify-center border border-border', getIconColor(file.type))">
-                                <component :is="getFileIcon(file.type)" class="w-16 h-16" />
+                                :class="cn('w-32 h-32 rounded-2xl bg-background shadow-xl flex items-center justify-center border border-border', getIconColor(file))">
+                                <component :is="getFileIcon(file)" class="w-16 h-16" />
                             </div>
                             <p class="text-muted-foreground text-sm">Preview not available for this file type</p>
                         </div>
@@ -124,7 +109,7 @@ const getIconColor = (type) => {
             <div class="w-full lg:w-80 border-l border-border bg-background flex flex-col">
                 <div class="p-6 border-b border-border">
                     <h2 class="text-lg font-semibold mb-1 truncate">{{ file.name }}</h2>
-                    <p class="text-xs text-muted-foreground">{{ getNormalizedFileType(file).toUpperCase() }} File • {{ file.size }}</p>
+                    <p class="text-xs text-muted-foreground">{{ (file.type || file.mimeType?.split('/').pop() || 'FILE').toUpperCase() }} File • {{ file.size }}</p>
                 </div>
 
                 <div class="flex-1 overflow-y-auto p-6 space-y-8">
