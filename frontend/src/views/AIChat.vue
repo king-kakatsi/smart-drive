@@ -1,6 +1,11 @@
+<script setup>
+import AIChatPanel from '@/components/chat/AIChatPanel.vue'
+</script>
+
 <template>
-  <div class="p-6">
-    <h1 class="text-2xl font-bold">AI Chat</h1>
-    <p class="text-muted-foreground">Ask questions about your documents and videos.</p>
+  <div class="h-full flex items-center justify-center bg-muted/10">
+    <div class="w-full max-w-4xl h-[90vh] shadow-2xl rounded-2xl overflow-hidden border border-border">
+      <AIChatPanel :is-open="true" @close="$router.back()" />
+    </div>
   </div>
 </template>
