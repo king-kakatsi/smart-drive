@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { X, Sparkles, Bot } from 'lucide-vue-next'
 import { cn } from '@/utils/cn'
@@ -18,7 +18,7 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const chatStore = useChatStore()
-const { messages, isTyping } = storeToRefs(chatStore)
+const { messages, isTyping, error } = storeToRefs(chatStore)
 
 const scrollRef = ref(null)
 
@@ -37,8 +37,29 @@ const scrollToBottom = () => {
     }
 }
 
+// Watch for new messages and auto-scroll
+watch(() => messages.value.length, () => {
+    nextTick(() => scrollToBottom())
+})
+
+// Watch for selected file changes
+watch(() => props.selectedFile, (newFile) => {
+    if (newFile) {
+        chatStore.setContextFiles([newFile.id])
+    } else {
+        chatStore.clearContext()
+    }
+})
+
 onMounted(() => {
+    // Initialize WebSocket connection
+    chatStore.initializeWebSocket()
     scrollToBottom()
+})
+
+onUnmounted(() => {
+    // Cleanup WebSocket connection
+    chatStore.disconnect()
 })
 </script>
 
