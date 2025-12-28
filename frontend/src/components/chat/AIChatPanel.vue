@@ -64,7 +64,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="flex flex-col h-full w-full lg:w-96 bg-background border-l border-border shadow-xl">
+    <div class="flex flex-col h-full w-full bg-background">
         <!-- Header -->
         <div class="p-4 border-b border-border flex items-center justify-between bg-muted/30">
             <div class="flex items-center gap-2">

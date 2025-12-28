@@ -1,11 +1,10 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import {
     Search,
     LayoutGrid,
     List,
-    Filter,
     Upload,
     ArrowUpDown,
     Plus
@@ -20,12 +19,29 @@ import Dropdown, { DropdownItem } from '@/components/common/Dropdown.vue'
 const props = defineProps({
     onOpenChat: Function,
     onShowUpload: Function,
-    onPreviewFile: Function
+    onPreviewFile: Function,
+    onToggleStar: Function
 })
 
 const { viewMode, searchQuery, filteredFiles } = useFiles()
 
 const sortBy = ref('name')
+
+// Sort the files based on sortBy
+const sortedFiles = computed(() => {
+  const files = [...filteredFiles.value]
+
+  switch (sortBy.value) {
+    case 'name':
+      return files.sort((a, b) => a.name.localeCompare(b.name))
+    case 'date':
+      return files.sort((a, b) => new Date(b.modifiedTime || b.updatedAt || b.createdAt) - new Date(a.modifiedTime || a.updatedAt || a.createdAt))
+    case 'size':
+      return files.sort((a, b) => (b.size || 0) - (a.size || 0))
+    default:
+      return files
+  }
+})
 </script>
 
 <template>
@@ -33,14 +49,7 @@ const sortBy = ref('name')
         <!-- Toolbar -->
         <div class="p-4 lg:p-8 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div class="flex items-center gap-4 flex-1">
-                <div class="relative w-full max-w-md">
-                    <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <BaseInput v-model="searchQuery" placeholder="Search files or ask AI..."
-                        class="pl-10 bg-muted/30 border-none" />
-                </div>
-                <BaseButton variant="outline" size="icon" class="shrink-0">
-                    <Filter class="w-4 h-4" />
-                </BaseButton>
+                <!-- Search is now handled by global navbar search -->
             </div>
 
             <div class="flex items-center gap-2">
@@ -80,15 +89,15 @@ const sortBy = ref('name')
 
         <!-- Content -->
         <div class="flex-1 overflow-y-auto p-4 lg:p-8">
-            <div v-if="filteredFiles.length > 0">
+            <div v-if="sortedFiles.length > 0">
                 <div :class="cn(
                     'grid gap-4',
                     viewMode === 'grid'
                         ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
                         : 'grid-cols-1'
                 )">
-                    <FileCard v-for="file in filteredFiles" :key="file.id" :file="file" :view-mode="viewMode"
-                        @preview="onPreviewFile" @open-chat="onOpenChat" />
+                    <FileCard v-for="file in sortedFiles" :key="file.id" :file="file" :view-mode="viewMode"
+                        @preview="onPreviewFile" @open-chat="onOpenChat" @toggle-star="onToggleStar" />
                 </div>
             </div>
 

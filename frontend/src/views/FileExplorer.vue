@@ -2,12 +2,14 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useChatStore } from '@/stores/chat'
+import { useFilesStore } from '@/stores/files'
 import FileExplorer from '@/components/files/FileExplorer.vue'
 import UploadModal from '@/components/files/UploadModal.vue'
 import FilePreviewModal from '@/components/files/FilePreviewModal.vue'
 
 const router = useRouter()
 const chatStore = useChatStore()
+const filesStore = useFilesStore()
 
 const isUploadOpen = ref(false)
 const isPreviewOpen = ref(false)
@@ -22,11 +24,19 @@ const handleOpenChat = (file) => {
   chatStore.startChatWithFile(file)
   router.push('/chat')
 }
+
+const handleToggleStar = async (file) => {
+  try {
+    await filesStore.toggleFileStar(file.id)
+  } catch (error) {
+    console.error('Failed to toggle star:', error)
+  }
+}
 </script>
 
 <template>
   <div class="h-full">
-    <FileExplorer @open-chat="handleOpenChat" @show-upload="isUploadOpen = true" @preview-file="handlePreviewFile" />
+    <FileExplorer @open-chat="handleOpenChat" @show-upload="isUploadOpen = true" @preview-file="handlePreviewFile" @toggle-star="handleToggleStar" />
 
     <!-- Modals -->
     <UploadModal :is-open="isUploadOpen" @close="isUploadOpen = false" />

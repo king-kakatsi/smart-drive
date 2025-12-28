@@ -1,14 +1,18 @@
 <script setup>
 import { computed } from 'vue'
-import { Search, Bell, Menu, MessageSquare } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { Search, Menu, MessageSquare } from 'lucide-vue-next'
 import { useUIStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
+import { useFilesStore } from '@/stores/files'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import BaseAvatar from '@/components/common/BaseAvatar.vue'
 
+const router = useRouter()
 const uiStore = useUIStore()
 const authStore = useAuthStore()
+const filesStore = useFilesStore()
 
 const user = computed(() => authStore.user || {
   full_name: 'User'
@@ -30,6 +34,7 @@ const user = computed(() => authStore.user || {
       <div class="relative w-full max-w-md hidden md:block">
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <BaseInput
+          v-model="filesStore.searchQuery"
           placeholder="Search files or ask AI..."
           class="pl-10 bg-muted/50 border-none focus-visible:ring-1"
         />
@@ -41,17 +46,9 @@ const user = computed(() => authStore.user || {
         variant="ghost"
         size="icon"
         class="text-muted-foreground hover:text-foreground"
-        @click="uiStore.toggleChat()"
+        @click="router.push('/chat')"
       >
         <MessageSquare class="w-5 h-5" />
-      </BaseButton>
-      
-      <BaseButton
-        variant="ghost"
-        size="icon"
-        class="text-muted-foreground hover:text-foreground"
-      >
-        <Bell class="w-5 h-5" />
       </BaseButton>
       
       <div class="h-8 w-px bg-border mx-2 hidden sm:block" />
