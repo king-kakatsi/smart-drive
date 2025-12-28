@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen bg-background text-foreground">
+  <MainLayout>
     <router-view />
-  </div>
+  </MainLayout>
 </template>
 
 <script setup>
-// App layout will be implemented in Phase 3
+import MainLayout from '@/components/layout/MainLayout.vue'
 </script>
 
 <style scoped>
