@@ -1,82 +1,142 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
+import authenticationService from '@/services/api/authenticationService'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
-    token: null,
-    isAuthenticated: false
+    isLoading: false,
+    error: null
   }),
 
   getters: {
-    isLoggedIn: (state) => state.isAuthenticated && !!state.token
+    isAuthenticated: (state) => !!state.user,
+    userEmail: (state) => state.user?.email || '',
+    userFullName: (state) => state.user?.full_name || '',
+    userAvatar: (state) => state.user?.avatar_url || null
   },
 
   actions: {
-    async initializeAuth() {
-      // Check for stored token
-      const token = localStorage.getItem('auth_token')
-      if (token) {
-        this.token = token
-        // Set axios default header
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    /**
+     * Initialize authentication on app load
+     */
+    async initializeAuthentication() {
+      // Check if user is authenticated
+      if (!authenticationService.isAuthenticated()) {
+        return
+      }
 
-        try {
-          // Verify token with backend
-          const response = await axios.get(`${API_BASE}/auth/me`)
-          this.user = response.data
-          this.isAuthenticated = true
-        } catch (error) {
-          // Token invalid, clear it
-          this.logout()
-        }
+      // Try to load cached user profile
+      const cachedUser = authenticationService.getUserProfile()
+      if (cachedUser) {
+        this.user = cachedUser
+      }
+
+      // Fetch fresh user profile from API
+      try {
+        await this.fetchCurrentUser()
+      } catch (error) {
+        // Token might be expired, clear auth
+        this.handleLogout()
       }
     },
 
-    async loginWithGoogle() {
-      // Redirect to Google OAuth
-      window.location.href = `${API_BASE}/auth/google/login`
+    /**
+     * Initiate Google OAuth login
+     */
+    async initiateGoogleLogin() {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        const authUrl = await authenticationService.getGoogleAuthorizationUrl()
+        // Redirect to Google OAuth
+        window.location.href = authUrl
+      } catch (error) {
+        this.error = error.detail || 'Failed to initiate Google login'
+        this.isLoading = false
+      }
     },
 
-    handleAuthCallback(token, userData) {
-      this.token = token
-      this.user = userData
-      this.isAuthenticated = true
+    /**
+     * Handle OAuth callback
+     * Extract token from URL and fetch user profile
+     */
+    async handleOAuthCallback() {
+      const urlParams = new URLSearchParams(window.location.search)
+      const token = urlParams.get('token')
+      const userId = urlParams.get('user_id')
+
+      if (!token) {
+        this.error = 'No authentication token received'
+        return false
+      }
 
       // Store token
-      localStorage.setItem('auth_token', token)
+      authenticationService.storeAccessToken(token)
 
-      // Set axios default header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-    },
-
-    logout() {
-      this.user = null
-      this.token = null
-      this.isAuthenticated = false
-
-      // Clear stored token
-      localStorage.removeItem('auth_token')
-
-      // Clear axios header
-      delete axios.defaults.headers.common['Authorization']
-    },
-
-    async refreshToken() {
+      // Fetch user profile
       try {
-        const response = await axios.post(`${API_BASE}/auth/refresh`)
-        const newToken = response.data.access_token
-
-        this.token = newToken
-        localStorage.setItem('auth_token', newToken)
-        axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
-
-        return newToken
+        await this.fetchCurrentUser()
+        
+        // Clear URL parameters
+        window.history.replaceState({}, document.title, window.location.pathname)
+        
+        return true
       } catch (error) {
-        this.logout()
+        this.error = error.detail || 'Failed to fetch user profile'
+        authenticationService.clearTokens()
+        return false
+      }
+    },
+
+    /**
+     * Fetch current user profile from API
+     */
+    async fetchCurrentUser() {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        const userProfile = await authenticationService.getCurrentUserProfile()
+        this.user = userProfile
+        
+        // Cache user profile
+        authenticationService.storeUserProfile(userProfile)
+        
+        this.isLoading = false
+      } catch (error) {
+        this.error = error.detail || 'Failed to fetch user profile'
+        this.isLoading = false
         throw error
+      }
+    },
+
+    /**
+     * Refresh access token
+     */
+    async refreshAccessToken() {
+      try {
+        await authenticationService.refreshAccessToken()
+      } catch (error) {
+        this.handleLogout()
+        throw error
+      }
+    },
+
+    /**
+     * Logout user
+     */
+    async handleLogout() {
+      this.isLoading = true
+
+      try {
+        await authenticationService.logout()
+      } catch (error) {
+        console.error('Logout error:', error)
+      } finally {
+        this.user = null
+        this.error = null
+        this.isLoading = false
       }
     }
   }
