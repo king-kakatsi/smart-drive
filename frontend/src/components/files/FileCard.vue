@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { useFilesStore } from '@/stores/files'
 import {
     FileText,
     Video,
@@ -17,6 +18,8 @@ import { cn } from '@/utils/cn'
 import BaseBadge from '@/components/common/BaseBadge.vue'
 import Dropdown, { DropdownItem } from '@/components/common/Dropdown.vue'
 
+const filesStore = useFilesStore()
+
 const props = defineProps({
     file: {
         type: Object,
@@ -32,7 +35,13 @@ const emit = defineEmits(['preview', 'open-chat', 'delete', 'download', 'toggle-
 
 const isHovered = ref(false)
 
-const getFileIcon = (type) => {
+// Normalize file type from either 'type' or 'mimeType' property
+const getNormalizedFileType = (file) => {
+    return file.type || file.mimeType?.split('/').pop() || 'file'
+}
+
+const getFileIcon = (file) => {
+    const type = getNormalizedFileType(file)
     switch (type?.toLowerCase()) {
         case 'pdf':
         case 'doc':
@@ -56,7 +65,8 @@ const getFileIcon = (type) => {
     }
 }
 
-const getIconColor = (type) => {
+const getIconColor = (file) => {
+    const type = getNormalizedFileType(file)
     switch (type?.toLowerCase()) {
         case 'pdf': return 'text-red-500 bg-red-50'
         case 'doc':
@@ -82,8 +92,8 @@ const getIconColor = (type) => {
         <template v-if="viewMode === 'grid'">
             <div
                 class="aspect-video mb-4 rounded-lg overflow-hidden bg-muted/30 flex items-center justify-center relative">
-                <component :is="getFileIcon(file.type)"
-                    :class="cn('w-12 h-12', getIconColor(file.type).split(' ')[0])" />
+                <component :is="getFileIcon(file)"
+                    :class="cn('w-12 h-12', getIconColor(file).split(' ')[0])" />
 
                 <!-- Hover Actions Overlay -->
                 <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0"
@@ -104,7 +114,7 @@ const getIconColor = (type) => {
                 <button class="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition-colors"
                     @click="emit('toggle-star', file)">
                     <Star
-                        :class="cn('w-3.5 h-3.5', file.isStarred ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400')" />
+                        :class="cn('w-3.5 h-3.5', filesStore.starredFileIds.includes(file.id) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400')" />
                 </button>
             </div>
 
@@ -136,13 +146,13 @@ const getIconColor = (type) => {
 
         <!-- List View -->
         <template v-else>
-            <div :class="cn('w-10 h-10 rounded-lg flex items-center justify-center shrink-0', getIconColor(file.type))">
-                <component :is="getFileIcon(file.type)" class="w-5 h-5" />
+            <div :class="cn('w-10 h-10 rounded-lg flex items-center justify-center shrink-0', getIconColor(file))">
+                <component :is="getFileIcon(file)" class="w-5 h-5" />
             </div>
 
             <div class="flex-1 min-w-0">
                 <h3 class="text-sm font-medium truncate">{{ file.name }}</h3>
-                <p class="text-[10px] text-muted-foreground">{{ file.type.toUpperCase() }} • {{ file.size }}</p>
+                <p class="text-[10px] text-muted-foreground">{{ getNormalizedFileType(file).toUpperCase() }} • {{ file.size }}</p>
             </div>
 
             <div class="hidden md:block text-xs text-muted-foreground px-4">

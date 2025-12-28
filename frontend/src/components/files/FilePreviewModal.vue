@@ -25,7 +25,13 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'open-chat', 'download', 'delete', 'share'])
 
-const getFileIcon = (type) => {
+// Normalize file type from either 'type' or 'mimeType' property
+const getNormalizedFileType = (file) => {
+    return file.type || file.mimeType?.split('/').pop() || 'file'
+}
+
+const getFileIcon = (file) => {
+    const type = getNormalizedFileType(file)
     switch (type?.toLowerCase()) {
         case 'pdf':
         case 'doc':
@@ -46,6 +52,21 @@ const getFileIcon = (type) => {
             return ImageIcon
         default:
             return File
+    }
+}
+
+const getIconColor = (file) => {
+    const type = getNormalizedFileType(file)
+    switch (type?.toLowerCase()) {
+        case 'pdf': return 'text-red-500'
+        case 'doc':
+        case 'docx': return 'text-blue-500'
+        case 'mp4':
+        case 'mov': return 'text-purple-500'
+        case 'mp3': return 'text-pink-500'
+        case 'jpg':
+        case 'png': return 'text-orange-500'
+        default: return 'text-gray-500'
     }
 }
 
@@ -71,7 +92,7 @@ const getIconColor = (type) => {
             <div class="flex-1 bg-muted/30 flex items-center justify-center p-8 relative overflow-hidden">
                 <div
                     class="absolute top-4 left-4 flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-border shadow-sm">
-                    <component :is="getFileIcon(file.type)" :class="cn('w-4 h-4', getIconColor(file.type))" />
+                    <component :is="getFileIcon(file)" :class="cn('w-4 h-4', getIconColor(file))" />
                     <span class="text-xs font-medium">{{ file.name }}</span>
                 </div>
 
@@ -103,7 +124,7 @@ const getIconColor = (type) => {
             <div class="w-full lg:w-80 border-l border-border bg-background flex flex-col">
                 <div class="p-6 border-b border-border">
                     <h2 class="text-lg font-semibold mb-1 truncate">{{ file.name }}</h2>
-                    <p class="text-xs text-muted-foreground">{{ file.type.toUpperCase() }} File • {{ file.size }}</p>
+                    <p class="text-xs text-muted-foreground">{{ getNormalizedFileType(file).toUpperCase() }} File • {{ file.size }}</p>
                 </div>
 
                 <div class="flex-1 overflow-y-auto p-6 space-y-8">
