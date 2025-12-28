@@ -8,7 +8,7 @@ import secrets
 
 from app.dependencies import get_db, get_current_user
 from app.core.auth import create_access_token, verify_token
-from app.core.drive_client import get_google_auth_url, exchange_code_for_tokens
+from app.core.drive_client import get_google_auth_url, exchange_code_for_tokens, get_google_user_info
 from app.models.user import UserCreate, UserResponse
 from app.services.user_service import create_or_update_user
 

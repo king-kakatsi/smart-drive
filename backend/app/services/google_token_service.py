@@ -81,7 +81,7 @@ async def store_google_tokens_for_user(
         {"user_id": user_id}
     )
     token = result.fetchone()
-    return GoogleTokenInDB(**dict(token))
+    return GoogleTokenInDB(**token._asdict())
 
 
 async def get_valid_access_token_for_user(
@@ -107,7 +107,7 @@ async def get_valid_access_token_for_user(
     if not token_record:
         return None
     
-    token = GoogleTokenInDB(**dict(token_record))
+    token = GoogleTokenInDB(**token_record._asdict())
     
     # Check if token is expired (with 5 minute buffer)
     if datetime.utcnow() >= token.expires_at - timedelta(minutes=5):
@@ -145,7 +145,7 @@ async def refresh_expired_google_token(
     if not token_record or not token_record.refresh_token:
         return None
     
-    token = GoogleTokenInDB(**dict(token_record))
+    token = GoogleTokenInDB(**token_record._asdict())
     
     # Refresh the token using Google OAuth2 API
     token_url = "https://oauth2.googleapis.com/token"
@@ -208,7 +208,7 @@ async def get_google_token_for_user(
     if not token_record:
         return None
     
-    return GoogleTokenInDB(**dict(token_record))
+    return GoogleTokenInDB(**token_record._asdict())
 
 
 async def delete_google_token_for_user(

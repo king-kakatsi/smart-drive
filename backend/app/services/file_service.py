@@ -65,7 +65,7 @@ async def get_user_files(
     )
 
     files = result.fetchall()
-    return [FileResponse(**dict(file)) for file in files]
+    return [FileResponse(**file._asdict()) for file in files]
 
 
 async def get_file_by_id(
@@ -84,7 +84,7 @@ async def get_file_by_id(
     )
 
     file = result.fetchone()
-    return FileResponse(**dict(file)) if file else None
+    return FileResponse(**file._asdict()) if file else None
 
 
 async def delete_file_record(
@@ -193,6 +193,6 @@ async def get_files_by_type(
     )
 
     files = result.fetchall()
-    return [FileResponse(**dict(file)) for file in files]
+    return [FileResponse(**file._asdict()) for file in files]
 
 
