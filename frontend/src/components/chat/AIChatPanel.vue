@@ -1,11 +1,14 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
+import { storeToRefs } from 'pinia'
 import { X, Sparkles, Bot } from 'lucide-vue-next'
 import { cn } from '@/utils/cn'
+import { useChatStore } from '@/stores/chat'
 import BaseButton from '@/components/common/BaseButton.vue'
 import ScrollArea from '@/components/common/ScrollArea.vue'
 import ChatMessage from './ChatMessage.vue'
 import ChatInput from './ChatInput.vue'
+import TypingIndicator from './TypingIndicator.vue'
 
 const props = defineProps({
     isOpen: Boolean,
@@ -14,42 +17,15 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
-const messages = ref([
-    {
-        id: 1,
-        role: 'assistant',
-        content: "Hello! I'm your AI assistant. I can help you analyze your documents and videos. What would you like to know?",
-        timestamp: '10:00 AM'
-    }
-])
+const chatStore = useChatStore()
+const { messages, isTyping } = storeToRefs(chatStore)
 
 const scrollRef = ref(null)
 
 const handleSendMessage = async (content) => {
-    const userMessage = {
-        id: Date.now(),
-        role: 'user',
-        content,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-
-    messages.value.push(userMessage)
-
+    await chatStore.sendMessage(content)
     await nextTick()
     scrollToBottom()
-
-    // Simulate AI response
-    setTimeout(async () => {
-        const aiMessage = {
-            id: Date.now() + 1,
-            role: 'assistant',
-            content: "I'm processing your request. This is a simulated response for the design demonstration.",
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-        messages.value.push(aiMessage)
-        await nextTick()
-        scrollToBottom()
-    }, 1000)
 }
 
 const scrollToBottom = () => {
@@ -102,6 +78,7 @@ onMounted(() => {
         <ScrollArea ref="scrollRef" class="flex-1 p-4">
             <div class="space-y-6">
                 <ChatMessage v-for="message in messages" :key="message.id" :message="message" />
+                <TypingIndicator v-if="isTyping" />
             </div>
         </ScrollArea>
 

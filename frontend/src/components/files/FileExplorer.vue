@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import {
     Search,
     LayoutGrid,
@@ -10,6 +11,7 @@ import {
     Plus
 } from 'lucide-vue-next'
 import { cn } from '@/utils/cn'
+import { useFiles } from '@/composables/useFiles'
 import BaseButton from '@/components/common/BaseButton.vue'
 import BaseInput from '@/components/common/BaseInput.vue'
 import FileCard from './FileCard.vue'
@@ -21,28 +23,10 @@ const props = defineProps({
     onPreviewFile: Function
 })
 
-const viewMode = ref('grid')
-const searchQuery = ref('')
+const filesStore = useFilesStore()
+const { viewMode, searchQuery, filteredFiles } = storeToRefs(filesStore)
+
 const sortBy = ref('name')
-
-const files = ref([
-    { id: 1, name: 'Project Proposal.pdf', type: 'pdf', size: '2.4 MB', updatedAt: '2 hours ago', isStarred: true },
-    { id: 2, name: 'Product Demo.mp4', type: 'mp4', size: '45.8 MB', updatedAt: '5 hours ago', isStarred: false },
-    { id: 3, name: 'Design Assets.zip', type: 'zip', size: '12.1 MB', updatedAt: 'Yesterday', isStarred: false },
-    { id: 4, name: 'Meeting Notes.docx', type: 'docx', size: '850 KB', updatedAt: '2 days ago', isStarred: true },
-    { id: 5, name: 'Revenue Q4.xlsx', type: 'xlsx', size: '1.2 MB', updatedAt: '3 days ago', isStarred: false },
-    { id: 6, name: 'Team Photo.jpg', type: 'jpg', size: '4.2 MB', updatedAt: '1 week ago', isStarred: false },
-])
-
-const filteredFiles = computed(() => {
-    return files.value.filter(file =>
-        file.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
-})
-
-const toggleViewMode = () => {
-    viewMode.value = viewMode.value === 'grid' ? 'list' : 'grid'
-}
 </script>
 
 <template>
