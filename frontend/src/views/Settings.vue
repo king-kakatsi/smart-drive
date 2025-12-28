@@ -1,18 +1,27 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { User, Bell, Shield, Cloud, Moon, Sun } from 'lucide-vue-next'
 import { useUIStore } from '@/stores/ui'
+import { useAuthStore } from '@/stores/auth'
 import BaseButton from '@/components/common/BaseButton.vue'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseAvatar from '@/components/common/BaseAvatar.vue'
 
 const uiStore = useUIStore()
+const authStore = useAuthStore()
 
 const settings = ref({
-  name: 'John Doe',
-  email: 'john@example.com',
+  name: authStore.user?.full_name || '',
+  email: authStore.user?.email || '',
   notifications: true,
-  theme: 'dark'
+  theme: uiStore.theme
+})
+
+onMounted(() => {
+  if (authStore.user) {
+    settings.value.name = authStore.user.full_name
+    settings.value.email = authStore.user.email
+  }
 })
 </script>
 
@@ -53,7 +62,7 @@ const settings = ref({
         <section class="space-y-4">
           <h2 class="text-xl font-semibold border-b pb-2">Profile Information</h2>
           <div class="flex items-center gap-6 py-4">
-            <BaseAvatar alt="John Doe" class="h-20 w-20" />
+            <BaseAvatar :alt="settings.name" :src="authStore.user?.avatar_url" class="h-20 w-20" />
             <BaseButton variant="outline">Change Avatar</BaseButton>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

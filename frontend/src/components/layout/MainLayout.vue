@@ -1,16 +1,18 @@
 <script setup>
 import { useUIStore } from '@/stores/ui'
+import { useAuthStore } from '@/stores/auth'
 import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
 import MobileNav from './MobileNav.vue'
 
 const uiStore = useUIStore()
+const authStore = useAuthStore()
 </script>
 
 <template>
   <div class="flex h-screen overflow-hidden bg-background">
     <!-- Desktop Sidebar -->
-    <aside class="hidden lg:block">
+    <aside v-if="authStore.isAuthenticated" class="hidden lg:block">
       <AppSidebar />
     </aside>
 
@@ -24,7 +26,7 @@ const uiStore = useUIStore()
       leave-to-class="-translate-x-full"
     >
       <aside
-        v-if="uiStore.isSidebarOpen"
+        v-if="authStore.isAuthenticated && uiStore.isSidebarOpen"
         class="fixed inset-0 z-40 lg:hidden"
       >
         <div class="fixed inset-0 bg-black/50" @click="uiStore.toggleSidebar()" />
@@ -34,14 +36,14 @@ const uiStore = useUIStore()
 
     <!-- Main Content Area -->
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-      <AppHeader />
+      <AppHeader v-if="authStore.isAuthenticated" />
       
       <main class="flex-1 overflow-y-auto pb-20 lg:pb-0">
         <slot />
       </main>
       
       <!-- Mobile Bottom Nav -->
-      <MobileNav class="lg:hidden" />
+      <MobileNav v-if="authStore.isAuthenticated" class="lg:hidden" />
     </div>
   </div>
 </template>

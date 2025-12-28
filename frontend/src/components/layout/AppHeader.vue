@@ -1,11 +1,18 @@
 <script setup>
+import { computed } from 'vue'
 import { Search, Bell, Menu, MessageSquare } from 'lucide-vue-next'
 import { useUIStore } from '@/stores/ui'
+import { useAuthStore } from '@/stores/auth'
 import BaseInput from '@/components/common/BaseInput.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import BaseAvatar from '@/components/common/BaseAvatar.vue'
 
 const uiStore = useUIStore()
+const authStore = useAuthStore()
+
+const user = computed(() => authStore.user || {
+  full_name: 'User'
+})
 </script>
 
 <template>
@@ -50,7 +57,8 @@ const uiStore = useUIStore()
       <div class="h-8 w-px bg-border mx-2 hidden sm:block" />
       
       <BaseAvatar
-        alt="John Doe"
+        :alt="user.full_name"
+        :src="user.avatar_url"
         class="h-8 w-8 cursor-pointer"
       />
     </div>

@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import { 
   Home, 
   Folder, 
@@ -17,6 +18,23 @@ import BaseButton from '@/components/common/BaseButton.vue'
 import Progress from '@/components/common/Progress.vue'
 
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+
+const user = computed(() => authStore.user || {
+  full_name: 'User',
+  email: ''
+})
+
+const userInitials = computed(() => {
+  const name = user.value.full_name || 'User'
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+})
+
+const handleLogout = async () => {
+  await authStore.logout()
+  router.push({ name: 'Login' })
+}
 
 const navItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
@@ -87,13 +105,17 @@ const isActive = (path) => route.path === path
       </div>
 
       <!-- User Profile -->
-      <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-sidebar-accent transition-colors cursor-pointer">
-        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-secondary to-accent flex items-center justify-center text-white font-medium">
-          JD
+      <div 
+        class="flex items-center gap-3 p-3 rounded-lg hover:bg-sidebar-accent transition-colors cursor-pointer group relative"
+        @click="handleLogout"
+        title="Click to Logout"
+      >
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-secondary to-accent flex items-center justify-center text-white font-medium shadow-inner group-hover:scale-105 transition-transform">
+          {{ userInitials }}
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium truncate">John Doe</p>
-          <p class="text-xs text-muted-foreground truncate">john@example.com</p>
+          <p class="text-sm font-medium truncate">{{ user.full_name }}</p>
+          <p class="text-xs text-muted-foreground truncate">{{ user.email }}</p>
         </div>
       </div>
     </div>

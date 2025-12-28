@@ -1,5 +1,6 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
 import {
   FileText,
   Video,
@@ -43,10 +44,12 @@ const handlePreviewFile = (file) => {
   isPreviewOpen.value = true
 }
 
-const handleOpenChat = (file) => {
-  // Logic to open chat with file context
-  console.log('Open chat for:', file.name)
-}
+
+const authStore = useAuthStore()
+const firstName = computed(() => {
+  const full_name = authStore.user?.full_name || 'User'
+  return full_name.split(' ')[0]
+})
 </script>
 
 <template>
@@ -54,7 +57,7 @@ const handleOpenChat = (file) => {
     <!-- Welcome Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <h1 class="text-3xl font-bold tracking-tight mb-2">Welcome back, John!</h1>
+        <h1 class="text-3xl font-bold tracking-tight mb-2">Welcome back, {{ firstName }}!</h1>
         <p class="text-muted-foreground">Here's what's happening with your files today.</p>
       </div>
       <div class="flex items-center gap-3">
