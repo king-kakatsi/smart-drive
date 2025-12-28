@@ -23,8 +23,7 @@ const props = defineProps({
     onPreviewFile: Function
 })
 
-const filesStore = useFilesStore()
-const { viewMode, searchQuery, filteredFiles } = storeToRefs(filesStore)
+const { viewMode, searchQuery, filteredFiles } = useFiles()
 
 const sortBy = ref('name')
 </script>

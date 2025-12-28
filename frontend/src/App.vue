@@ -10,5 +10,4 @@ import MainLayout from '@/components/layout/MainLayout.vue'
 
 <style scoped>
 /* Basic styles */
-
-
+</style>
