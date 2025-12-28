@@ -12,6 +12,7 @@ import {
     MessageSquare,
     Download,
     Trash2,
+    Share2,
     Star
 } from 'lucide-vue-next'
 import { cn } from '@/utils/cn'
@@ -30,13 +31,19 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['preview', 'open-chat', 'delete', 'download', 'toggle-star'])
+const emit = defineEmits(['preview', 'open-chat', 'delete', 'download', 'share', 'toggle-star', 'open-folder'])
 
 const isHovered = ref(false)
 const filesStore = useFilesStore()
 
 const isFileStarred = computed(() => {
     return filesStore.starredFileIds.includes(props.file.id)
+})
+
+const isFolder = computed(() => {
+    return props.file.mimeType === 'application/vnd.google-apps.folder' ||
+           props.file.type === 'folder' ||
+           props.file.file_type === 'folder'
 })
 
 const getFileIcon = (file) => {
@@ -89,8 +96,9 @@ const getIconColor = (file) => {
         'group relative bg-card rounded-xl border border-border transition-all duration-200',
         viewMode === 'grid'
             ? 'p-4 hover:shadow-lg hover:-translate-y-1'
-            : 'flex items-center gap-4 p-3 hover:bg-muted/50'
-    )" @mouseenter="isHovered = true" @mouseleave="isHovered = false">
+            : 'flex items-center gap-4 p-3 hover:bg-muted/50',
+        isFolder ? 'cursor-pointer' : ''
+    )" @mouseenter="isHovered = true" @mouseleave="isHovered = false" @click="isFolder ? emit('open-folder', file) : null">
         <!-- Grid View -->
         <template v-if="viewMode === 'grid'">
             <div
@@ -98,11 +106,11 @@ const getIconColor = (file) => {
                 <component :is="getFileIcon(file)"
                     :class="cn('w-12 h-12', getIconColor(file).split(' ')[0])" />
 
-                <!-- Hover Actions Overlay -->
+                <!-- Hover Actions Overlay (only for files, not folders) -->
                 <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0"
                     enter-to-class="opacity-100" leave-active-class="transition duration-150 ease-in"
                     leave-from-class="opacity-100" leave-to-class="opacity-0">
-                    <div v-if="isHovered" class="absolute inset-0 bg-black/40 flex items-center justify-center gap-2">
+                    <div v-if="isHovered && !isFolder" class="absolute inset-0 bg-black/40 flex items-center justify-center gap-2">
                         <button class="p-2 bg-white rounded-lg hover:scale-110 transition-transform" title="Preview"
                             @click="emit('preview', file)">
                             <Eye class="w-4 h-4 text-gray-900" />
@@ -114,8 +122,9 @@ const getIconColor = (file) => {
                     </div>
                 </Transition>
 
-                <button class="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition-colors"
-                    @click="emit('toggle-star', file)">
+                <!-- Star button (only for files, not folders) -->
+                <button v-if="!isFolder" class="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition-colors"
+                    @click.stop="emit('toggle-star', file)">
                     <Star
                         :class="cn('w-3.5 h-3.5', isFileStarred ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400')" />
                 </button>
@@ -162,7 +171,8 @@ const getIconColor = (file) => {
                 {{ file.updatedAt }}
             </div>
 
-            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <!-- Hover actions (only for files, not folders) -->
+            <div v-if="!isFolder" class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                     class="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                     @click="emit('preview', file)">
@@ -174,12 +184,16 @@ const getIconColor = (file) => {
                 </button>
             </div>
 
-            <Dropdown>
+            <!-- Dropdown menu (only for files, not folders) -->
+            <Dropdown v-if="!isFolder">
                 <template #trigger>
                     <button class="p-2 hover:bg-muted rounded-lg transition-colors">
                         <MoreVertical class="w-4 h-4 text-muted-foreground" />
                     </button>
                 </template>
+                <DropdownItem @click="emit('share', file)">
+                    <Share2 class="w-4 h-4 mr-2" /> Share
+                </DropdownItem>
                 <DropdownItem @click="emit('download', file)">
                     <Download class="w-4 h-4 mr-2" /> Download
                 </DropdownItem>

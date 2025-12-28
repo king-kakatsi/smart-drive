@@ -19,18 +19,27 @@ const authStore = useAuthStore()
     <!-- Mobile Sidebar Overlay -->
     <Transition
       enter-active-class="transition duration-300 ease-out"
-      enter-from-class="-translate-x-full"
-      enter-to-class="translate-x-0"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
       leave-active-class="transition duration-200 ease-in"
-      leave-from-class="translate-x-0"
-      leave-to-class="-translate-x-full"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
     >
       <aside
         v-if="authStore.isAuthenticated && uiStore.isSidebarOpen"
         class="fixed inset-0 z-40 lg:hidden"
       >
-        <div class="fixed inset-0 bg-black/50" @click="uiStore.toggleSidebar()" />
-        <AppSidebar class="relative z-50" />
+        <div class="fixed inset-0 bg-black/30 backdrop-blur-sm" @click="uiStore.toggleSidebar()" />
+        <Transition
+          enter-active-class="transition duration-300 ease-out"
+          enter-from-class="-translate-x-full"
+          enter-to-class="translate-x-0"
+          leave-active-class="transition duration-200 ease-in"
+          leave-from-class="translate-x-0"
+          leave-to-class="-translate-x-full"
+        >
+          <AppSidebar v-if="uiStore.isSidebarOpen" class="relative z-50" />
+        </Transition>
       </aside>
     </Transition>
 
