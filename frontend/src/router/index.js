@@ -1,31 +1,64 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import authenticationService from '@/services/api/authenticationService'
 
 const routes = [
   {
     path: '/',
     name: 'Dashboard',
-    component: () => import('../views/Dashboard.vue')
+    component: () => import('../views/Dashboard.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/files',
     name: 'FileExplorer',
-    component: () => import('../views/FileExplorer.vue')
+    component: () => import('../views/FileExplorer.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/chat',
     name: 'AIChat',
-    component: () => import('../views/AIChat.vue')
+    component: () => import('../views/AIChat.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/settings',
     name: 'Settings',
-    component: () => import('../views/Settings.vue')
+    component: () => import('../views/Settings.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/auth/callback',
+    name: 'AuthCallback',
+    component: () => import('../views/AuthCallback.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/Login.vue'),
+    meta: { requiresAuth: false }
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// Navigation guard for authentication
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = authenticationService.isAuthenticated()
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+
+  if (requiresAuth && !isAuthenticated) {
+    // Redirect to login if route requires auth and user is not authenticated
+    next({ name: 'Login' })
+  } else if (to.name === 'Login' && isAuthenticated) {
+    // Redirect to dashboard if user is already authenticated and tries to access login
+    next({ name: 'Dashboard' })
+  } else {
+    next()
+  }
 })
 
 export default router
