@@ -7,3 +7,5 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 
 # AI (ADD YOUR API KEY)
 GROQ_API_KEY=your-groq-api-key
+
+

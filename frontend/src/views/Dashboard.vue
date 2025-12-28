@@ -1,7 +1,9 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useFilesStore } from '@/stores/files'
+import { useChatStore } from '@/stores/chat'
 import { onMounted } from 'vue'
 import {
   FileText,
@@ -22,6 +24,9 @@ import FileCard from '@/components/files/FileCard.vue'
 import UploadModal from '@/components/files/UploadModal.vue'
 import GoogleDriveModal from '@/components/files/GoogleDriveModal.vue'
 import FilePreviewModal from '@/components/files/FilePreviewModal.vue'
+
+const router = useRouter()
+const chatStore = useChatStore()
 
 const isUploadOpen = ref(false)
 const isDriveModalOpen = ref(false)
@@ -65,6 +70,10 @@ const handlePreviewFile = (file) => {
   isPreviewOpen.value = true
 }
 
+const handleOpenChat = (file) => {
+  chatStore.startChatWithFile(file)
+  router.push('/chat')
+}
 
 const authStore = useAuthStore()
 const firstName = computed(() => {

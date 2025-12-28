@@ -1,8 +1,13 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useChatStore } from '@/stores/chat'
 import FileExplorer from '@/components/files/FileExplorer.vue'
 import UploadModal from '@/components/files/UploadModal.vue'
 import FilePreviewModal from '@/components/files/FilePreviewModal.vue'
+
+const router = useRouter()
+const chatStore = useChatStore()
 
 const isUploadOpen = ref(false)
 const isPreviewOpen = ref(false)
@@ -14,8 +19,8 @@ const handlePreviewFile = (file) => {
 }
 
 const handleOpenChat = (file) => {
-  // Logic to open chat with file context
-  console.log('Open chat for:', file.name)
+  chatStore.startChatWithFile(file)
+  router.push('/chat')
 }
 </script>
 

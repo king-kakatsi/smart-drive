@@ -32,3 +32,5 @@ GROQ_MODEL=mixtral-8x7b-32768
 JWT_SECRET=dev-jwt-secret-change-in-production-67890
 JWT_ALGORITHM=HS256
 JWT_EXPIRATION_HOURS=24
+
+

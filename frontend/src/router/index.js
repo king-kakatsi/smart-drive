@@ -15,6 +15,24 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/recent',
+    name: 'Recent',
+    component: () => import('../views/Recent.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/starred',
+    name: 'Starred',
+    component: () => import('../views/Starred.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/trash',
+    name: 'Trash',
+    component: () => import('../views/Trash.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/chat',
     name: 'AIChat',
     component: () => import('../views/AIChat.vue'),

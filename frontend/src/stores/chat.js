@@ -151,6 +151,15 @@ export const useChatStore = defineStore('chat', {
     },
 
     /**
+     * Start chat with a specific file context
+     */
+    startChatWithFile(file) {
+      this.clearHistory()
+      this.setContextFiles([file.id])
+      this.currentContext = file
+    },
+
+    /**
      * Clear context files
      */
     clearContext() {

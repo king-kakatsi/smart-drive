@@ -33,10 +33,39 @@ export const useFilesStore = defineStore('files', {
      */
     filteredFiles: (state) => {
       const query = state.searchQuery.toLowerCase()
-      return state.allFiles.filter(file => 
+      return state.allFiles.filter(file =>
         file.name?.toLowerCase().includes(query) ||
         file.original_filename?.toLowerCase().includes(query)
       )
+    },
+
+    /**
+     * Get recent files (last 7 days)
+     */
+    recentFiles: (state) => {
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+      return state.allFiles
+        .filter(file => {
+          const fileDate = new Date(file.modifiedTime || file.updatedAt || file.createdAt)
+          return fileDate >= sevenDaysAgo
+        })
+        .sort((a, b) => new Date(b.modifiedTime || b.updatedAt || b.createdAt) - new Date(a.modifiedTime || a.updatedAt || a.createdAt))
+    },
+
+    /**
+     * Get starred files
+     */
+    starredFiles: (state) => {
+      return state.allFiles.filter(file => file.isStarred || file.is_starred)
+    },
+
+    /**
+     * Get trashed files
+     */
+    trashedFiles: (state) => {
+      return state.allFiles.filter(file => file.isTrashed || file.is_trashed)
     },
 
     /**
@@ -233,6 +262,47 @@ export const useFilesStore = defineStore('files', {
       this.viewMode = this.viewMode === 'grid' ? 'list' : 'grid'
     },
     
+    /**
+     * Toggle file star status
+     */
+    async toggleFileStar(fileId) {
+      this.error = null
+
+      try {
+        // Find the file in localFiles or driveFiles
+        let file = this.localFiles.find(f => f.id === fileId)
+        let fileType = 'local'
+
+        if (!file) {
+          file = this.driveFiles.find(f => f.id === fileId)
+          fileType = 'drive'
+        }
+
+        if (!file) {
+          throw new Error('File not found')
+        }
+
+        // Toggle the star status (optimistic update)
+        const wasStarred = file.isStarred || file.is_starred
+        file.isStarred = !wasStarred
+        file.is_starred = !wasStarred
+
+        // TODO: Call backend API when available
+        // await fileService.toggleStar(fileId)
+
+      } catch (error) {
+        // Revert optimistic update on error
+        const file = this.localFiles.find(f => f.id === fileId) || this.driveFiles.find(f => f.id === fileId)
+        if (file) {
+          file.isStarred = !file.isStarred
+          file.is_starred = !file.is_starred
+        }
+
+        this.error = error.detail || 'Failed to toggle star status'
+        throw error
+      }
+    },
+
     /**
      * Fetch storage metrics
      */
