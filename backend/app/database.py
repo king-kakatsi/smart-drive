@@ -85,6 +85,20 @@ async def init_db():
             )
         """))
 
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS google_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER UNIQUE NOT NULL,
+                access_token TEXT NOT NULL,
+                refresh_token TEXT,
+                token_uri TEXT DEFAULT 'https://oauth2.googleapis.com/token',
+                expires_at TIMESTAMP NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+        """))
+
         # Create upload directory
         os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
