@@ -2,13 +2,17 @@
 Google Drive integration routes
 """
 import os
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Dict, Any, Optional
 
 from app.dependencies import get_current_user, get_db
 from app.services.google_drive_service import google_drive_service
 from app.services.google_token_service import get_valid_access_token_for_user
+from app.services.file_service import save_file_metadata
+from app.core.document_processor import get_document_processor
+from app.core.video_processor import get_video_processor
+from app.config import settings
 
 
 router = APIRouter()
@@ -64,6 +68,7 @@ async def get_drive_file_metadata(
 async def upload_file_to_drive(
     file: UploadFile = File(...),
     folder_id: Optional[str] = Form(None),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
     user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -111,6 +116,15 @@ async def upload_file_to_drive(
         print(f"DEBUG: Using access token (first 10 chars): {access_token[:10]}...")
         print(f"DEBUG: File metadata: {file_metadata}")
         
+        # Determine file type
+        file_type = "document"  # default
+        if file_ext in [".mp4", ".avi", ".mov", ".mkv", ".webm"]:
+            file_type = "video"
+        elif file_ext in [".mp3", ".wav", ".flac"]:
+            file_type = "audio"
+        elif file_ext in [".jpg", ".jpeg", ".png", ".gif"]:
+            file_type = "image"
+
         # Upload to Drive using the service
         drive_file = await google_drive_service.upload_file_to_drive(
             database=db,
@@ -120,8 +134,46 @@ async def upload_file_to_drive(
             mime_type=file.content_type
         )
 
+        # Save metadata and file copy for indexing
+        drive_cache_dir = os.path.join(settings.UPLOAD_DIR, "drive")
+        os.makedirs(drive_cache_dir, exist_ok=True)
+        
+        local_path = os.path.join(drive_cache_dir, f"{drive_file['id']}_{file.filename}")
+        with open(local_path, "wb") as f:
+            f.write(file_content)
+
+        file_record = await save_file_metadata(
+            filename=f"{drive_file['id']}_{file.filename}",
+            original_filename=file.filename,
+            file_path=local_path,
+            file_size=len(file_content),
+            mime_type=file.content_type,
+            file_type=file_type,
+            user_id=user.id,
+            folder_path="/", # Default for drive files for now
+            db=db,
+            drive_file_id=drive_file['id']
+        )
+
+        # Trigger indexing
+        index_metadata = {
+            "filename": file.filename,
+            "mime_type": file.content_type,
+            "file_type": file_type,
+            "user_id": user.id,
+            "drive_file_id": drive_file['id']
+        }
+
+        if file_type == "document":
+            doc_processor = get_document_processor()
+            background_tasks.add_task(doc_processor.process_file, local_path, file_record.id, index_metadata)
+        elif file_type == "video":
+            vid_processor = get_video_processor()
+            background_tasks.add_task(vid_processor.process_video, local_path, file_record.id, index_metadata)
+
         return JSONResponse({
             "id": drive_file['id'],
+            "local_id": file_record.id,
             "name": drive_file['name'],
             "mimeType": drive_file['mimeType'],
             "size": drive_file.get('size', len(file_content)),

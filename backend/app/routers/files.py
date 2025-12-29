@@ -1,7 +1,7 @@
 """
 File management routes for upload, download, and organization
 """
-from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status
+from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status, BackgroundTasks
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
@@ -19,6 +19,8 @@ from app.services.file_service import (
     move_file
 )
 from app.models.file import FileResponse, FolderCreate
+from app.core.document_processor import get_document_processor
+from app.core.video_processor import get_video_processor
 
 
 router = APIRouter()
@@ -28,6 +30,7 @@ router = APIRouter()
 async def upload_file(
     file: UploadFile = File(...),
     folder_path: str = "/",
+    background_tasks: BackgroundTasks = BackgroundTasks(),
     user = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -85,6 +88,22 @@ async def upload_file(
         folder_path=folder_path,
         db=db
     )
+
+    # Trigger background processing for indexing
+    metadata = {
+        "filename": file.filename,
+        "mime_type": file.content_type,
+        "file_type": file_type,
+        "user_id": user.id if user else None
+    }
+
+    if file_type == "document":
+        doc_processor = get_document_processor()
+        background_tasks.add_task(doc_processor.process_file, file_path, file_record.id, metadata)
+    elif file_type == "video":
+        vid_processor = get_video_processor()
+        background_tasks.add_task(vid_processor.process_video, file_path, file_record.id, metadata)
+
 
     return FileResponse(
         id=file_record.id,

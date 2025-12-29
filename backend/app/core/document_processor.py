@@ -45,6 +45,20 @@ class DocumentProcessor:
         # Add to vector store
         await self.vector_store.add_documents(documents, metadatas, ids)
 
+        # Update database status
+        try:
+            from app.database import async_session
+            from sqlalchemy import text
+            
+            async with async_session() as session:
+                await session.execute(
+                    text("UPDATE files SET processed = 1 WHERE id = :file_id"),
+                    {"file_id": file_id}
+                )
+                await session.commit()
+        except Exception as e:
+            print(f"Error updating file status for {file_id}: {str(e)}")
+
         return True
 
     async def _extract_text(self, file_path: str) -> Optional[str]:

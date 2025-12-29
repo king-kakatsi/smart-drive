@@ -7,7 +7,7 @@ from typing import List
 import json
 import uuid
 
-from app.dependencies import get_current_user, get_db
+from app.dependencies import get_current_user, get_current_user_ws, get_db
 from app.core.ai_client import get_ai_client
 from app.core.vector_store import get_vector_store
 from app.models.chat import ChatRequest, ChatResponse, ChatMessage
@@ -20,7 +20,7 @@ router = APIRouter()
 @router.websocket("/ws/chat")
 async def chat_websocket(
     websocket: WebSocket,
-    user = Depends(get_current_user),
+    user = Depends(get_current_user_ws),
     db: AsyncSession = Depends(get_db)
 ):
     """WebSocket endpoint for real-time AI chat"""
@@ -53,7 +53,25 @@ async def chat_websocket(
 
             # Search for relevant documents
             vector_store = get_vector_store()
-            search_results = await vector_store.search_documents(message, n_results=3)
+            
+            search_where = None
+            if file_ids:
+                try:
+                    # Filter by the local database file IDs
+                    ids_to_filter = [int(fid) for fid in file_ids if str(fid).isdigit()]
+                    if ids_to_filter:
+                        if len(ids_to_filter) == 1:
+                            search_where = {"file_id": ids_to_filter[0]}
+                        else:
+                            search_where = {"file_id": {"$in": ids_to_filter}}
+                except Exception as e:
+                    print(f"Error building search filter: {str(e)}")
+
+            search_results = await vector_store.search_documents(
+                message, 
+                n_results=5, 
+                where=search_where
+            )
 
             # Build context from search results
             context = ""
@@ -66,12 +84,16 @@ async def chat_websocket(
                         sources.append(search_results["metadatas"][0][i])
 
             # Build AI prompt
-            system_prompt = f"""You are SmartDrive AI.
-You ONLY respond using indexed content from documents.
-If answer not in content, reply "Content not found."
-Include source filename + position when possible.
+            system_prompt = f"""You are SmartDrive AI, an expert document assistant.
+Your goal is to answer questions using ONLY the provided document context.
 
-Context from documents:
+RULES:
+1. If the answer is in the context, provide a detailed response and CITE the source filenames.
+2. If the answer is NOT in the context, say "I'm sorry, I couldn't find information about that in the selected documents."
+3. Do NOT use your general knowledge to answer if the context is missing.
+4. If multiple documents are provided, synthesize the information correctly.
+
+CONTEXT FROM DOCUMENTS:
 {context}
 """
 
@@ -80,6 +102,12 @@ Context from documents:
                 {"role": "user", "content": message}
             ]
 
+            # Send start signal
+            await websocket.send_json({
+                "type": "start",
+                "session_id": session_id
+            })
+
             # Get AI response with streaming
             ai_client = get_ai_client()
             full_response = ""
@@ -87,20 +115,26 @@ Context from documents:
             async for chunk in ai_client.chat_completion(messages, stream=True):
                 full_response += chunk
                 await websocket.send_json({
+                    "type": "stream",
                     "content": chunk,
-                    "done": False,
                     "session_id": session_id
                 })
 
             # Save AI response
             await save_chat_message(session_id, "assistant", full_response, user.id if user else None, db, sources)
 
+            # Send sources
+            for source in sources:
+                await websocket.send_json({
+                    "type": "source",
+                    "source": source,
+                    "session_id": session_id
+                })
+
             # Send completion signal
             await websocket.send_json({
-                "content": "",
-                "done": True,
-                "session_id": session_id,
-                "sources": sources
+                "type": "end",
+                "session_id": session_id
             })
 
     except WebSocketDisconnect:
@@ -126,7 +160,20 @@ async def chat_message(
 
     # Search for relevant documents
     vector_store = get_vector_store()
-    search_results = await vector_store.search_documents(request.message, n_results=3)
+    
+    search_where = None
+    if request.file_ids:
+        try:
+            ids_to_filter = [int(fid) for fid in request.file_ids if str(fid).isdigit()]
+            if ids_to_filter:
+                if len(ids_to_filter) == 1:
+                    search_where = {"file_id": ids_to_filter[0]}
+                else:
+                    search_where = {"file_id": {"$in": ids_to_filter}}
+        except:
+            pass
+
+    search_results = await vector_store.search_documents(request.message, n_results=5, where=search_where)
 
     # Build context
     context = ""
@@ -141,12 +188,15 @@ async def chat_message(
     # Get AI response
     ai_client = get_ai_client()
 
-    system_prompt = f"""You are SmartDrive AI.
-You ONLY respond using indexed content from documents.
-If answer not in content, reply "Content not found."
-Include source filename + position when possible.
+    system_prompt = f"""You are SmartDrive AI, an expert document assistant.
+Your goal is to answer questions using ONLY the provided document context.
 
-Context from documents:
+RULES:
+1. If the answer is in the context, provide a detailed response and CITE the source filenames.
+2. If the answer is NOT in the context, say "I'm sorry, I couldn't find information about that in the selected documents."
+3. Do NOT use your general knowledge to answer if the context is missing.
+
+CONTEXT FROM DOCUMENTS:
 {context}
 """
 

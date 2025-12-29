@@ -20,7 +20,7 @@ class ChatService {
       throw new Error('No access token found')
     }
 
-    const wsUrl = `${environment.apiWebSocketUrl}/api/v1/chat/ws/chat`
+    const wsUrl = `${environment.apiWebSocketUrl}/api/v1/chat/ws/chat?token=${token}`
     this.websocket = new WebSocket(wsUrl)
 
     this.websocket.onopen = () => {

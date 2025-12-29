@@ -14,7 +14,8 @@ import {
   Settings,
   Plus,
   LayoutDashboard,
-  LogOut
+  LogOut,
+  MessageSquare
 } from 'lucide-vue-next'
 import { cn } from '@/utils/cn'
 import BaseButton from '@/components/common/BaseButton.vue'
@@ -44,6 +45,7 @@ const navItems = [
   { name: 'All Files', icon: Folder, path: '/files' },
   { name: 'Recent', icon: Clock, path: '/recent' },
   { name: 'Starred', icon: Star, path: '/starred' },
+  { name: 'AI Chat', icon: MessageSquare, path: '/chat' },
   // { name: 'Trash', icon: Trash2, path: '/trash' },
 ]
 
