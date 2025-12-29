@@ -19,7 +19,6 @@ const filesStore = useFilesStore()
 const files = ref([])
 const isDragging = ref(false)
 const isUploadingAll = ref(false)
-const uploadDestination = ref('local')
 
 const handleFileSelect = (event) => {
     const selectedFiles = Array.from(event.target.files)
@@ -74,35 +73,42 @@ const uploadFile = async (fileId) => {
     fileItem.error = null
 
     try {
-        let uploadedFile
+        // First, try Google Drive upload
+        try {
+            const uploadedFile = await driveService.uploadFileToDrive(fileItem.file)
 
-        // Choose upload service based on destination
-        if (uploadDestination.value === 'local') {
-            console.log('📤 Uploading to local storage:', fileItem.file.name)
-            uploadedFile = await fileService.uploadFile(fileItem.file)
-            console.log('✅ Local upload successful:', uploadedFile)
-        } else if (uploadDestination.value === 'drive') {
-            console.log('☁️ Uploading to Google Drive:', fileItem.file.name)
-            uploadedFile = await driveService.uploadFileToDrive(fileItem.file)
-            console.log('✅ Google Drive upload response:', uploadedFile)
-        }
+            fileItem.status = 'completed'
+            fileItem.progress = 100
 
-        fileItem.status = 'completed'
-        fileItem.progress = 100
-
-        // Update the files store based on upload destination
-        console.log('🔄 Refreshing file list...')
-        if (uploadDestination.value === 'local') {
-            await filesStore.fetchAllFiles('/')
-        } else if (uploadDestination.value === 'drive') {
             await filesStore.fetchDriveFiles()
+
+        } catch (driveError) {
+            // Google Drive failed, fallback to local storage
+            console.warn('Google Drive upload failed, falling back to local storage:', driveError.message)
+
+            try {
+                const uploadedFile = await fileService.uploadFile(fileItem.file)
+
+                fileItem.status = 'completed'
+                fileItem.progress = 100
+
+                await filesStore.fetchAllFiles('/')
+
+                // Mark that this was uploaded locally as fallback
+                fileItem.uploadMode = 'local_fallback'
+
+            } catch (localError) {
+                // Both methods failed
+                console.error('Both Google Drive and local upload failed:', localError)
+                fileItem.status = 'error'
+                fileItem.error = 'Upload failed for both Google Drive and local storage'
+                fileItem.progress = 0
+            }
         }
-        console.log('📊 Files store updated after upload')
 
     } catch (error) {
-        console.error('❌ Upload failed:', error)
-        console.error('Error details:', error.message)
-        console.error('Stack trace:', error.stack)
+        // Unexpected error
+        console.error('Upload failed:', error)
         fileItem.status = 'error'
         fileItem.error = error.message || 'Upload failed'
         fileItem.progress = 0
@@ -158,26 +164,11 @@ const retryUpload = (id) => {
         <ModalHeader>
             <ModalTitle>Upload Files</ModalTitle>
             <ModalDescription>
-                Upload your documents, images, or videos to start analyzing them with AI.
+                Upload your documents, images, or videos to Google Drive to start analyzing them with AI.
+                Files will be stored locally if Google Drive is not available.
             </ModalDescription>
         </ModalHeader>
 
-        <!-- Upload Destination Selection -->
-        <div class="space-y-4 px-6 pt-4">
-            <div class="space-y-2">
-                <Label>Upload Destination</Label>
-                <RadioGroup v-model="uploadDestination">
-                    <div class="flex items-center space-x-2">
-                        <RadioGroupItem value="local" id="local" />
-                        <Label for="local">Local Storage</Label>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <RadioGroupItem value="drive" id="drive" />
-                        <Label for="drive">Google Drive</Label>
-                    </div>
-                </RadioGroup>
-            </div>
-        </div>
 
         <div class="py-4 space-y-4">
             <!-- Dropzone -->
@@ -206,6 +197,9 @@ const retryUpload = (id) => {
                             <div class="min-w-0">
                                 <p class="text-xs font-medium truncate">{{ file.name }}</p>
                                 <p class="text-[10px] text-muted-foreground">{{ file.size }}</p>
+                                <p v-if="file.uploadMode === 'local_fallback'" class="text-[9px] text-orange-600">
+                                    Stored locally
+                                </p>
                             </div>
                         </div>
 
@@ -256,6 +250,14 @@ const retryUpload = (id) => {
                     @click="handleClose">
                     Done
                 </BaseButton>
+            </div>
+
+            <!-- Fallback notification -->
+            <div v-if="files.some(f => f.uploadMode === 'local_fallback')" class="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <p class="text-sm text-orange-800">
+                    Some files were stored locally because Google Drive is not available.
+                    Connect your Google Drive account to enable cloud storage.
+                </p>
             </div>
         </div>
     </BaseModal>
