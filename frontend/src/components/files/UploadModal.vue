@@ -56,8 +56,7 @@ const addFiles = (newFiles) => {
         file: file, // Store the actual File object
         name: file.name,
         size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
-        progress: 0,
-        status: 'pending',
+        status: 'ready', // Files are ready to upload but not uploaded yet
         error: null
     }))
 
@@ -70,6 +69,7 @@ const uploadFile = async (fileId) => {
 
     fileItem.status = 'uploading'
     fileItem.progress = 0
+    fileItem.error = null
 
     try {
         // Upload using fileService
@@ -87,6 +87,7 @@ const uploadFile = async (fileId) => {
         console.error('Upload failed:', error)
         fileItem.status = 'error'
         fileItem.error = error.message || 'Upload failed'
+        fileItem.progress = 0
     }
 }
 
@@ -94,11 +95,11 @@ const uploadAllFiles = async () => {
     if (isUploadingAll.value) return
 
     isUploadingAll.value = true
-    const pendingFiles = files.value.filter(f => f.status === 'pending')
+    const readyFiles = files.value.filter(f => f.status === 'ready' || f.status === 'error')
 
     try {
         // Upload files sequentially to avoid overwhelming the server
-        for (const fileItem of pendingFiles) {
+        for (const fileItem of readyFiles) {
             await uploadFile(fileItem.id)
         }
     } catch (error) {
@@ -119,10 +120,11 @@ const handleClose = () => {
 
 const retryUpload = (id) => {
     const fileItem = files.value.find(f => f.id === id)
-    if (fileItem) {
-        fileItem.status = 'pending'
+    if (fileItem && fileItem.status === 'error') {
+        fileItem.status = 'ready'
         fileItem.error = null
-        uploadFile(id)
+        fileItem.progress = 0
+        // Don't auto-upload, let user click Submit
     }
 }
 </script>
@@ -172,12 +174,8 @@ const retryUpload = (id) => {
                                 title="Upload failed" />
                             <Loader2 v-else-if="file.status === 'uploading'" class="w-4 h-4 animate-spin text-primary" />
                             <div v-else class="flex items-center gap-1">
-                                <button v-if="file.status === 'error'" class="p-1 hover:bg-background rounded transition-colors"
-                                    @click.stop="retryUpload(file.id)" title="Retry upload">
-                                    <Upload class="w-3 h-3 text-muted-foreground" />
-                                </button>
                                 <button class="p-1 hover:bg-background rounded transition-colors"
-                                    @click.stop="removeFile(file.id)">
+                                    @click.stop="removeFile(file.id)" title="Remove file">
                                     <X class="w-3 h-3 text-muted-foreground" />
                                 </button>
                             </div>
@@ -208,12 +206,12 @@ const retryUpload = (id) => {
                     Cancel
                 </BaseButton>
                 <BaseButton
-                    v-if="files.some(f => f.status === 'pending' || f.status === 'error')"
+                    v-if="!files.every(f => f.status === 'completed')"
                     class="flex-1 sm:flex-none px-8"
                     @click="uploadAllFiles"
                     :disabled="isUploadingAll">
                     <Loader2 v-if="isUploadingAll" class="w-4 h-4 mr-2 animate-spin" />
-                    {{ isUploadingAll ? 'Uploading...' : 'Upload Files' }}
+                    {{ isUploadingAll ? 'Uploading...' : 'Submit' }}
                 </BaseButton>
                 <BaseButton
                     v-if="files.every(f => f.status === 'completed')"
