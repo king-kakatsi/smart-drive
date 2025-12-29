@@ -35,16 +35,29 @@ const handleToggleStar = async (file) => {
 
 const handleDownload = async (file) => {
   try {
-    // For Google Drive files, use the webViewLink
+    let downloadUrl = ''
+
+    // Determine the download URL
     if (file.webViewLink) {
-      window.open(file.webViewLink, '_blank')
+      // For Google Drive files, use the drive download endpoint
+      downloadUrl = `/api/v1/drive/files/${file.id}/download`
     } else if (file.id && !isNaN(file.id)) {
       // For local files, use the backend download endpoint
-      const downloadUrl = `/api/v1/files/${file.id}/download`
-      window.open(downloadUrl, '_blank')
+      downloadUrl = `/api/v1/files/${file.id}/download`
     } else {
       console.error('Cannot download file: invalid file data', file)
+      return
     }
+
+    // Create a temporary link and trigger download
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.download = file.name || 'download'
+    link.style.display = 'none'
+
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   } catch (error) {
     console.error('Failed to download file:', error)
   }
