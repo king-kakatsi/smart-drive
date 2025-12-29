@@ -50,15 +50,6 @@ const displayName = computed(() => {
            'Unnamed File'
 })
 
-const displayName = computed(() => {
-    // Handle multiple possible field names for filename
-    return props.file.name ||
-           props.file.original_filename ||
-           props.file.filename ||
-           props.file.title ||
-           'Unnamed File'
-})
-
 const isFolder = computed(() => {
     return props.file.mimeType === 'application/vnd.google-apps.folder' ||
            props.file.type === 'folder' ||
