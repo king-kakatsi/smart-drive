@@ -114,44 +114,44 @@ class GoogleDriveClient:
 
                 return await response.read()
 
-    async def upload_file(self, access_token: str, file_metadata: Dict[str, Any], media_body) -> Dict[str, Any]:
-        """Upload a file to Google Drive"""
+    async def upload_file(self, access_token: str, file_metadata: Dict[str, Any], file_content: bytes, mime_type: str) -> Dict[str, Any]:
+        """Upload a file to Google Drive using multipart upload"""
         import aiohttp
         import json
 
         upload_url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart"
         headers = {"Authorization": f"Bearer {access_token}"}
+        print(f"DEBUG: Starting upload to Google Drive for {file_metadata.get('name')}")
 
         # Create multipart request
         boundary = "boundary123"
         headers["Content-Type"] = f"multipart/related; boundary={boundary}"
 
         # Create multipart body
-        body_parts = [
-            f"--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n",
-            json.dumps(file_metadata),
-            f"\r\n--{boundary}\r\nContent-Type: {media_body.mimetype}\r\n\r\n"
-        ]
+        # Part 1: Metadata
+        metadata_part = (
+            f"--{boundary}\r\n"
+            "Content-Type: application/json; charset=UTF-8\r\n\r\n"
+            f"{json.dumps(file_metadata)}\r\n"
+        ).encode('utf-8')
 
-        # Read media content
-        media_content = media_body.getbytes(0, media_body.length())
+        # Part 2: Media content
+        media_header = (
+            f"--{boundary}\r\n"
+            f"Content-Type: {mime_type or 'application/octet-stream'}\r\n\r\n"
+        ).encode('utf-8')
 
-        # Combine all parts
-        data = b""
-        for part in body_parts:
-            if isinstance(part, str):
-                data += part.encode('utf-8')
-            else:
-                data += part
+        # Part 3: Footer
+        footer = f"\r\n--{boundary}--\r\n".encode('utf-8')
 
-        data += media_content
-        data += f"\r\n--{boundary}--\r\n".encode('utf-8')
+        # Combine all
+        data = metadata_part + media_header + file_content + footer
 
         async with aiohttp.ClientSession() as session:
             async with session.post(upload_url, headers=headers, data=data) as response:
-                if response.status != 200:
+                if response.status not in (200, 201):
                     error_text = await response.text()
-                    raise Exception(f"Failed to upload file: {response.status} - {error_text}")
+                    raise Exception(f"Google Drive API error: {response.status} - {error_text}")
 
                 return await response.json()
 

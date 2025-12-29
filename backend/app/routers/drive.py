@@ -1,12 +1,14 @@
 """
 Google Drive integration routes
 """
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
+import os
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Dict, Any, Optional
 
 from app.dependencies import get_current_user, get_db
 from app.services.google_drive_service import google_drive_service
+from app.services.google_token_service import get_valid_access_token_for_user
 
 
 router = APIRouter()
@@ -61,7 +63,7 @@ async def get_drive_file_metadata(
 @router.post("/upload")
 async def upload_file_to_drive(
     file: UploadFile = File(...),
-    folder_id: str = None,
+    folder_id: Optional[str] = Form(None),
     user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -71,6 +73,7 @@ async def upload_file_to_drive(
     import io
 
     try:
+        print(f"DEBUG: Received Drive upload request for file: {file.filename}")
         # Validate file extension
         file_ext = os.path.splitext(file.filename)[1].lower()
         allowed_extensions = ['.pdf', '.docx', '.txt', '.md', '.mp4', '.avi', '.mov', '.mp3', '.jpg', '.jpeg', '.png', '.gif']
@@ -99,25 +102,22 @@ async def upload_file_to_drive(
         # Prepare file metadata
         file_metadata = {
             'name': file.filename,
-            'mimeType': file.content_type
+            'mimeType': file.content_type or 'application/octet-stream'
         }
 
         if folder_id:
             file_metadata['parents'] = [folder_id]
 
-        # Create media upload
-        media = MediaIoBaseUpload(
-            io.BytesIO(file_content),
-            mimetype=file.content_type,
-            resumable=True
-        )
-
+        print(f"DEBUG: Using access token (first 10 chars): {access_token[:10]}...")
+        print(f"DEBUG: File metadata: {file_metadata}")
+        
         # Upload to Drive using the service
         drive_file = await google_drive_service.upload_file_to_drive(
             database=db,
             user_id=user.id,
             file_metadata=file_metadata,
-            media_body=media
+            file_content=file_content,
+            mime_type=file.content_type
         )
 
         return JSONResponse({
@@ -126,10 +126,12 @@ async def upload_file_to_drive(
             "mimeType": drive_file['mimeType'],
             "size": drive_file.get('size', len(file_content)),
             "webViewLink": drive_file.get('webViewLink'),
-            "createdTime": drive_file['createdTime']
+            "createdTime": drive_file.get('createdTime', 'N/A')
         })
 
     except Exception as error:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Upload failed: {str(error)}"

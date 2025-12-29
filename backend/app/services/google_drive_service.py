@@ -231,7 +231,8 @@ class GoogleDriveService:
         database: AsyncSession,
         user_id: int,
         file_metadata: Dict[str, Any],
-        media_body
+        file_content: bytes,
+        mime_type: str
     ) -> Dict[str, Any]:
         """
         Upload a file to Google Drive
@@ -240,7 +241,8 @@ class GoogleDriveService:
             database: Database session
             user_id: User ID
             file_metadata: File metadata for Drive
-            media_body: Media upload body
+            file_content: File content bytes
+            mime_type: Content MIME type
 
         Returns:
             Dict containing uploaded file information
@@ -251,7 +253,7 @@ class GoogleDriveService:
             raise Exception("No valid Google Drive token found for user")
 
         # Upload file using Drive API
-        return await self.drive_client.upload_file(access_token, file_metadata, media_body)
+        return await self.drive_client.upload_file(access_token, file_metadata, file_content, mime_type)
 
 
 # Global service instance
