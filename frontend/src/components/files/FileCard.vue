@@ -79,6 +79,23 @@ const getFileIcon = (file) => {
     }
 }
 
+const handleCardClick = (event) => {
+    // Don't open file if clicking on buttons, dropdowns, or their children
+    const target = event.target
+    const isButton = target.tagName === 'BUTTON' || target.closest('button')
+    const isDropdown = target.closest('[class*="dropdown"]') || target.closest('.relative')
+
+    if (isButton || isDropdown) {
+        return
+    }
+
+    if (isFolder) {
+        emit('open-folder', file)
+    } else {
+        emit('open-file', file)
+    }
+}
+
 const getIconColor = (file) => {
     // Check for Google Drive folder first
     if (file.mimeType === 'application/vnd.google-apps.folder' ||
@@ -109,7 +126,7 @@ const getIconColor = (file) => {
             ? 'p-4 hover:shadow-lg hover:-translate-y-1 hover:z-[10000]'
             : 'flex items-center gap-4 p-3 hover:bg-muted/50',
         isFolder ? 'cursor-pointer' : ''
-    )" @mouseenter="isHovered = true" @mouseleave="isHovered = false" @click="isFolder ? emit('open-folder', file) : emit('open-file', file)">
+    )" @mouseenter="isHovered = true" @mouseleave="isHovered = false" @click="handleCardClick">
         <!-- Grid View -->
         <template v-if="viewMode === 'grid'">
             <div
@@ -153,7 +170,7 @@ const getIconColor = (file) => {
 
                 <Dropdown class="shrink-0 bg-gray-100">
                     <template #trigger>
-                        <button class="p-1 hover:bg-muted rounded transition-colors" @click.stop>
+                        <button class="p-1 hover:bg-muted rounded transition-colors">
                             <MoreVertical class="w-4 h-4 text-muted-foreground" />
                         </button>
                     </template>
@@ -198,7 +215,7 @@ const getIconColor = (file) => {
             <!-- Dropdown menu (only for files, not folders) -->
             <Dropdown v-if="!isFolder">
                 <template #trigger>
-                    <button class="p-2 hover:bg-muted rounded-lg transition-colors" @click.stop>
+                    <button class="p-2 hover:bg-muted rounded-lg transition-colors">
                         <MoreVertical class="w-4 h-4 text-muted-foreground" />
                     </button>
                 </template>

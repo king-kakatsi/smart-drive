@@ -127,17 +127,16 @@ const getIconColor = (file) => {
                 <div class="flex-1 overflow-y-auto p-6 space-y-8">
                     <!-- Quick Actions -->
                     <div class="space-y-3">
-                        <BaseButton class="w-full justify-start gap-3 h-12 shadow-sm" @click="emit('open-chat', file)">
-                            <MessageSquare class="w-5 h-5" />
-                            <span>Ask AI about this file</span>
-                        </BaseButton>
-
                         <div class="grid grid-cols-2 gap-2">
-                            <BaseButton variant="outline" class="gap-2" @click="emit('share', file)">
+                            <BaseButton class="gap-2 bg-gray-900 text-accent-foreground hover:bg-gray-700" @click="emit('open-chat', file)">
+                                <MessageSquare class="w-4 h-4" />
+                                <span>Ask AI</span>
+                            </BaseButton>
+                            <BaseButton class="gap-2 bg-accent text-accent-foreground hover:bg-[#129989]" @click="emit('share', file)">
                                 <Share2 class="w-4 h-4" />
                                 <span>Share</span>
                             </BaseButton>
-                            <BaseButton variant="outline" class="gap-2" @click="emit('download', file)">
+                            <BaseButton variant="outline" class="gap-2 border-secondary text-secondary hover:bg-secondary hover:text-accent-foreground" @click="emit('download', file)">
                                 <Download class="w-4 h-4" />
                                 <span>Download</span>
                             </BaseButton>
@@ -172,7 +171,7 @@ const getIconColor = (file) => {
                 </div>
 
                 <div class="p-6 border-t border-border">
-                    <BaseButton variant="ghost" class="w-full text-destructive hover:bg-destructive/10 gap-2"
+                    <BaseButton variant="outline" class="w-full border-pink-700 text-pink-700 hover:bg-pink-700 hover:text-white gap-2"
                         @click="emit('delete', file)">
                         <Trash2 class="w-4 h-4" />
                         <span>Delete File</span>

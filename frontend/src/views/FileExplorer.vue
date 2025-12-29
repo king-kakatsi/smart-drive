@@ -71,6 +71,8 @@ const handleDelete = async (file) => {
   if (confirm(`Are you sure you want to delete "${file.name}"?`)) {
     try {
       await filesStore.deleteFile(file.id)
+      // Close the preview modal after successful deletion
+      isPreviewOpen.value = false
     } catch (error) {
       console.error('Failed to delete file:', error)
     }
@@ -109,6 +111,6 @@ const handleOpenFolder = (folder) => {
     <!-- Modals -->
     <UploadModal :is-open="isUploadOpen" @close="isUploadOpen = false" />
     <FilePreviewModal :is-open="isPreviewOpen" :file="selectedFile" @close="isPreviewOpen = false"
-      @open-chat="handleOpenChat" />
+      @open-chat="handleOpenChat" @download="handleDownload" @delete="handleDelete" @share="handleShare" />
   </div>
 </template>
