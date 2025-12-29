@@ -173,7 +173,7 @@ const getIconColor = (file) => {
                     </div>
                 </div>
 
-                <Dropdown class="shrink-0 bg-gray-100">
+                <Dropdown v-if="!isFolder" class="shrink-0 bg-gray-100">
                     <template #trigger>
                         <button class="p-1 hover:bg-muted rounded transition-colors">
                             <MoreVertical class="w-4 h-4 text-muted-foreground" />
