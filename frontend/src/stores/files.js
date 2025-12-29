@@ -15,6 +15,12 @@ export const useFilesStore = defineStore('files', {
     isUploading: false,
     uploadProgress: 0,
     isDataLoaded: false,
+    // Folder navigation state
+    currentFolderPath: '/',
+    folderHistory: ['/'],
+    folderContents: [],
+    isNavigating: false,
+    folderIdMap: {}, // Maps folder paths to Drive folder IDs
     storageMetrics: {
       used: 0,
       total: 15 * 1024 * 1024 * 1024, // 15GB default
@@ -386,6 +392,112 @@ export const useFilesStore = defineStore('files', {
         }
       } catch (error) {
         console.error('Failed to fetch storage metrics:', error)
+      }
+    },
+
+    /**
+     * Navigate to a specific folder
+     */
+    async navigateToFolder(folderPath, folderId = null) {
+      this.isNavigating = true
+      this.error = null
+
+      try {
+        this.currentFolderPath = folderPath
+
+        // Update folder history
+        const historyIndex = this.folderHistory.indexOf(folderPath)
+        if (historyIndex >= 0) {
+          // If path already exists in history, truncate to that point
+          this.folderHistory = this.folderHistory.slice(0, historyIndex + 1)
+        } else {
+          // Add new path to history
+          this.folderHistory.push(folderPath)
+        }
+
+        // Store folder ID mapping for Google Drive
+        if (folderId) {
+          this.folderIdMap[folderPath] = folderId
+        }
+
+        await this.fetchFolderContents(folderPath)
+      } catch (error) {
+        this.error = error.message || 'Failed to navigate to folder'
+        throw error
+      } finally {
+        this.isNavigating = false
+      }
+    },
+
+    /**
+     * Navigate up one level
+     */
+    async navigateUp() {
+      if (this.folderHistory.length > 1) {
+        this.folderHistory.pop()
+        const parentPath = this.folderHistory[this.folderHistory.length - 1]
+        await this.navigateToFolder(parentPath)
+      }
+    },
+
+    /**
+     * Fetch contents of a specific folder
+     */
+    async fetchFolderContents(folderPath) {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        if (folderPath === '/') {
+          // Root folder - fetch all files
+          await Promise.all([
+            this.fetchAllFiles('/'),
+            this.fetchDriveFiles()
+          ])
+          this.folderContents = this.allFiles
+        } else {
+          // Subfolder - fetch specific folder contents
+          const [localFiles, driveFiles] = await Promise.all([
+            fileService.listAllFiles(folderPath),
+            this.fetchDriveFolderContents(folderPath)
+          ])
+          this.folderContents = [...localFiles, ...driveFiles]
+        }
+      } catch (error) {
+        this.error = error.message || 'Failed to fetch folder contents'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    /**
+     * Fetch Google Drive folder contents
+     */
+    async fetchDriveFolderContents(folderPath) {
+      if (folderPath === '/') {
+        // Root level Drive files
+        const response = await driveService.listDriveFiles()
+        return response.files || []
+      }
+
+      // Find the Drive folder ID for this path
+      const folderId = this.folderIdMap[folderPath]
+      if (!folderId) {
+        return []
+      }
+
+      // For Drive subfolders, we need to filter files by parent
+      // This is a simplified approach - in a real implementation,
+      // you might want to cache folder hierarchies
+      try {
+        const response = await driveService.listDriveFiles(1000) // Get more files
+        return (response.files || []).filter(file =>
+          file.parents && file.parents.includes(folderId)
+        )
+      } catch (error) {
+        console.error('Failed to fetch Drive folder contents:', error)
+        return []
       }
     }
   }

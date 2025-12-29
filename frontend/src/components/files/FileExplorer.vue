@@ -1,56 +1,42 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { storeToRefs } from 'pinia'
+import { computed } from 'vue'
 import {
-    Search,
     LayoutGrid,
     List,
     Upload,
-    ArrowUpDown,
     Plus
 } from 'lucide-vue-next'
 import { cn } from '@/utils/cn'
 import { useFiles } from '@/composables/useFiles'
 import BaseButton from '@/components/common/BaseButton.vue'
-import BaseInput from '@/components/common/BaseInput.vue'
 import FileCard from './FileCard.vue'
-import Dropdown, { DropdownItem } from '@/components/common/Dropdown.vue'
 
 const props = defineProps({
+    files: {
+        type: Array,
+        default: () => []
+    },
+    title: {
+        type: String,
+        default: 'All Files'
+    },
+    emptyMessage: {
+        type: String,
+        default: 'No files found'
+    },
+    emptyDescription: {
+        type: String,
+        default: 'Try adjusting your search or upload a new file to get started.'
+    },
     onOpenChat: Function,
     onShowUpload: Function,
     onPreviewFile: Function,
-    onToggleStar: Function,
-    onDownload: Function,
-    onDelete: Function,
-    onShare: Function,
     onOpenFolder: Function,
     onOpenFile: Function
 })
 
-const { viewMode, searchQuery, filteredFiles, setViewMode } = useFiles()
-
-const sortBy = ref('name')
-
-// Sort the files based on sortBy
-const sortedFiles = computed(() => {
-  const files = [...filteredFiles.value]
-
-  switch (sortBy.value) {
-    case 'name':
-      return files.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-    case 'date':
-      return files.sort((a, b) => {
-        const dateA = new Date(a.modifiedTime || a.updatedAt || a.createdAt || 0)
-        const dateB = new Date(b.modifiedTime || b.updatedAt || b.createdAt || 0)
-        return dateB - dateA
-      })
-    case 'size':
-      return files.sort((a, b) => (b.size || 0) - (a.size || 0))
-    default:
-      return files
-  }
-})
+const { viewMode, setViewMode } = useFiles()
+const displayFiles = computed(() => props.files)
 </script>
 
 <template>
@@ -77,18 +63,6 @@ const sortedFiles = computed(() => {
                     </button>
                 </div>
 
-                <Dropdown>
-                    <template #trigger>
-                        <BaseButton variant="outline" class="gap-2">
-                            <ArrowUpDown class="w-4 h-4" />
-                            <span class="hidden sm:inline">Sort</span>
-                        </BaseButton>
-                    </template>
-                    <DropdownItem @click="sortBy = 'name'">Name</DropdownItem>
-                    <DropdownItem @click="sortBy = 'date'">Date Modified</DropdownItem>
-                    <DropdownItem @click="sortBy = 'size'">Size</DropdownItem>
-                </Dropdown>
-
                 <BaseButton class="gap-2" @click="onShowUpload">
                     <Plus class="w-4 h-4" />
                     <span class="hidden sm:inline">Upload</span>
@@ -98,15 +72,15 @@ const sortedFiles = computed(() => {
 
         <!-- Content -->
         <div class="flex-1 overflow-y-auto p-4 lg:p-8">
-            <div v-if="sortedFiles.length > 0">
+            <div v-if="displayFiles.length > 0">
                 <div :class="cn(
                     'grid gap-4',
                     viewMode === 'grid'
-                        ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+                        ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5'
                         : 'grid-cols-1'
                 )">
-                    <FileCard v-for="file in sortedFiles" :key="file.id" :file="file" :view-mode="viewMode"
-                        @preview="onPreviewFile" @open-chat="onOpenChat" @toggle-star="onToggleStar" @download="onDownload" @delete="onDelete" @share="onShare" @open-folder="onOpenFolder" @open-file="onOpenFile" />
+                    <FileCard v-for="file in displayFiles" :key="file.id" :file="file" :view-mode="viewMode"
+                        @preview="onPreviewFile" @open-chat="onOpenChat" @download="onDownload" @share="onShare" @open-folder="onOpenFolder" @open-file="onOpenFile" />
                 </div>
             </div>
 
@@ -115,11 +89,11 @@ const sortedFiles = computed(() => {
                 <div class="w-24 h-24 rounded-full bg-primary/5 flex items-center justify-center mb-6">
                     <Upload class="w-12 h-12 text-muted-foreground" />
                 </div>
-                <h3 class="text-lg font-semibold mb-2">No files found</h3>
+                <h3 class="text-lg font-semibold mb-2">{{ emptyMessage }}</h3>
                 <p class="text-muted-foreground mb-6 max-w-md">
-                    Try adjusting your search or upload a new file to get started.
+                    {{ emptyDescription }}
                 </p>
-                <BaseButton size="lg" class="rounded-xl shadow-md" @click="onShowUpload">
+                <BaseButton v-if="onShowUpload" size="lg" class="rounded-xl shadow-md" @click="onShowUpload">
                     Upload Your First File
                 </BaseButton>
             </div>

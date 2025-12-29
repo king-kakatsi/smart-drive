@@ -81,19 +81,19 @@ const getFileIcon = (file) => {
 }
 
 const handleCardClick = (event) => {
-    // Don't open file if clicking on buttons, dropdowns, or their children
+    if (isFolder) {
+        // Folders are always clickable for navigation
+        emit('open-folder', props.file)
+        return
+    }
+
+    // For files, don't open if clicking on buttons, dropdowns, or their children
     const target = event.target
     const isButton = target.tagName === 'BUTTON' || target.closest('button')
     const isDropdown = target.closest('[class*="dropdown"]') || target.closest('.relative')
 
-    if (isButton || isDropdown) {
-        return
-    }
-
-    if (isFolder) {
-        emit('open-folder', file)
-    } else {
-        emit('open-file', file)
+    if (!isButton && !isDropdown) {
+        emit('open-file', props.file)
     }
 }
 

@@ -9,9 +9,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/files',
+    path: '/files/:folderPath*',
     name: 'FileExplorer',
     component: () => import('../views/FileExplorer.vue'),
+    props: route => ({
+      initialFolderPath: '/' + (route.params.folderPath || []).join('/')
+    }),
     meta: { requiresAuth: true }
   },
   {
