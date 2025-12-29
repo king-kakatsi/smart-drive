@@ -226,6 +226,33 @@ class GoogleDriveService:
         # Delete file using Drive API (moves to trash)
         return await self.drive_client.delete_file(access_token, file_id)
 
+    async def upload_file_to_drive(
+        self,
+        database: AsyncSession,
+        user_id: int,
+        file_metadata: Dict[str, Any],
+        media_body
+    ) -> Dict[str, Any]:
+        """
+        Upload a file to Google Drive
+
+        Args:
+            database: Database session
+            user_id: User ID
+            file_metadata: File metadata for Drive
+            media_body: Media upload body
+
+        Returns:
+            Dict containing uploaded file information
+        """
+        access_token = await get_valid_access_token_for_user(database, user_id)
+
+        if not access_token:
+            raise Exception("No valid Google Drive token found for user")
+
+        # Upload file using Drive API
+        return await self.drive_client.upload_file(access_token, file_metadata, media_body)
+
 
 # Global service instance
 google_drive_service = GoogleDriveService()

@@ -2,11 +2,12 @@
 import { ref } from 'vue'
 import { Upload, X, File, CheckCircle2, AlertCircle, Loader2 } from 'lucide-vue-next'
 import { cn } from '@/utils/cn'
-import BaseModal, { ModalHeader, ModalTitle, ModalDescription, ModalFooter } from '@/components/common/BaseModal.vue'
+import BaseModal, { ModalHeader, ModalTitle, ModalDescription } from '@/components/common/BaseModal.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import Progress from '@/components/common/Progress.vue'
 import { useFilesStore } from '@/stores/files'
 import fileService from '@/services/api/fileService'
+import driveService from '@/services/api/driveService'
 
 const props = defineProps({
     isOpen: Boolean
@@ -18,6 +19,7 @@ const filesStore = useFilesStore()
 const files = ref([])
 const isDragging = ref(false)
 const isUploadingAll = ref(false)
+const uploadDestination = ref('local')
 
 const handleFileSelect = (event) => {
     const selectedFiles = Array.from(event.target.files)
@@ -72,8 +74,14 @@ const uploadFile = async (fileId) => {
     fileItem.error = null
 
     try {
-        // Upload using fileService
-        const uploadedFile = await fileService.uploadFile(fileItem.file)
+        let uploadedFile
+
+        // Choose upload service based on destination
+        if (uploadDestination.value === 'local') {
+            uploadedFile = await fileService.uploadFile(fileItem.file)
+        } else if (uploadDestination.value === 'drive') {
+            uploadedFile = await driveService.uploadFileToDrive(fileItem.file)
+        }
 
         fileItem.status = 'completed'
         fileItem.progress = 100
@@ -101,6 +109,12 @@ const uploadAllFiles = async () => {
         // Upload files sequentially to avoid overwhelming the server
         for (const fileItem of readyFiles) {
             await uploadFile(fileItem.id)
+        }
+
+        // Check if all files completed successfully and close modal
+        const allCompleted = files.value.every(f => f.status === 'completed')
+        if (allCompleted) {
+            emit('close')
         }
     } catch (error) {
         console.error('Batch upload failed:', error)
@@ -137,6 +151,23 @@ const retryUpload = (id) => {
                 Upload your documents, images, or videos to start analyzing them with AI.
             </ModalDescription>
         </ModalHeader>
+
+        <!-- Upload Destination Selection -->
+        <div class="space-y-4 px-6 pt-4">
+            <div class="space-y-2">
+                <Label>Upload Destination</Label>
+                <RadioGroup v-model="uploadDestination">
+                    <div class="flex items-center space-x-2">
+                        <RadioGroupItem value="local" id="local" />
+                        <Label for="local">Local Storage</Label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <RadioGroupItem value="drive" id="drive" />
+                        <Label for="drive">Google Drive</Label>
+                    </div>
+                </RadioGroup>
+            </div>
+        </div>
 
         <div class="py-4 space-y-4">
             <!-- Dropzone -->
@@ -194,20 +225,17 @@ const retryUpload = (id) => {
                     </div>
                 </div>
             </div>
-        </div>
 
-        <ModalFooter v-if="files.length > 0">
-            <div class="flex gap-3 w-full sm:w-auto">
+            <!-- Submit and Cancel Buttons -->
+            <div v-if="files.length > 0" class="flex gap-3 justify-end pt-4 border-t border-border">
                 <BaseButton
                     variant="outline"
-                    class="flex-1 sm:flex-none"
                     @click="handleClose"
                     :disabled="isUploadingAll">
                     Cancel
                 </BaseButton>
                 <BaseButton
                     v-if="!files.every(f => f.status === 'completed')"
-                    class="flex-1 sm:flex-none px-8"
                     @click="uploadAllFiles"
                     :disabled="isUploadingAll">
                     <Loader2 v-if="isUploadingAll" class="w-4 h-4 mr-2 animate-spin" />
@@ -215,11 +243,10 @@ const retryUpload = (id) => {
                 </BaseButton>
                 <BaseButton
                     v-if="files.every(f => f.status === 'completed')"
-                    class="flex-1 sm:flex-none px-8"
                     @click="handleClose">
                     Done
                 </BaseButton>
             </div>
-        </ModalFooter>
+        </div>
     </BaseModal>
 </template>

@@ -53,6 +53,18 @@ class DriveService {
   }
 
   /**
+   * Upload file to Google Drive
+   */
+  async uploadFileToDrive(file, folderId = null) {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (folderId) {
+      formData.append('folder_id', folderId)
+    }
+    return await apiClient.uploadFile('/api/v1/drive/upload', formData)
+  }
+
+  /**
    * Delete (trash) a Drive file
    */
   async deleteDriveFile(fileId) {

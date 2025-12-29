@@ -114,6 +114,47 @@ class GoogleDriveClient:
 
                 return await response.read()
 
+    async def upload_file(self, access_token: str, file_metadata: Dict[str, Any], media_body) -> Dict[str, Any]:
+        """Upload a file to Google Drive"""
+        import aiohttp
+        import json
+
+        upload_url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart"
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        # Create multipart request
+        boundary = "boundary123"
+        headers["Content-Type"] = f"multipart/related; boundary={boundary}"
+
+        # Create multipart body
+        body_parts = [
+            f"--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n",
+            json.dumps(file_metadata),
+            f"\r\n--{boundary}\r\nContent-Type: {media_body.mimetype}\r\n\r\n"
+        ]
+
+        # Read media content
+        media_content = media_body.getbytes(0, media_body.length())
+
+        # Combine all parts
+        data = b""
+        for part in body_parts:
+            if isinstance(part, str):
+                data += part.encode('utf-8')
+            else:
+                data += part
+
+        data += media_content
+        data += f"\r\n--{boundary}--\r\n".encode('utf-8')
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(upload_url, headers=headers, data=data) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"Failed to upload file: {response.status} - {error_text}")
+
+                return await response.json()
+
     async def export_file(self, access_token: str, file_id: str, mime_type: str) -> bytes:
         """Export a Google native file to a standard format"""
 

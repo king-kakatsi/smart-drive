@@ -41,10 +41,31 @@ const isFileStarred = computed(() => {
     return filesStore.starredFileIds.includes(props.file.id)
 })
 
+const displayName = computed(() => {
+    // Handle multiple possible field names for filename
+    return props.file.name ||
+           props.file.original_filename ||
+           props.file.filename ||
+           props.file.title ||
+           'Unnamed File'
+})
+
 const isFolder = computed(() => {
     return props.file.mimeType === 'application/vnd.google-apps.folder' ||
            props.file.type === 'folder' ||
            props.file.file_type === 'folder'
+})
+
+// Debug: Log file object structure
+console.log('FileCard file object:', {
+    id: props.file.id,
+    name: props.file.name,
+    filename: props.file.filename,
+    original_filename: props.file.original_filename,
+    title: props.file.title,
+    mimeType: props.file.mimeType,
+    type: props.file.type,
+    file_type: props.file.file_type
 })
 
 const getFileIcon = (file) => {
@@ -81,8 +102,17 @@ const getFileIcon = (file) => {
 }
 
 const handleCardClick = (event) => {
-    if (isFolder) {
+    console.log('FileCard clicked:', {
+        name: props.file.name,
+        mimeType: props.file.mimeType,
+        type: props.file.type,
+        file_type: props.file.file_type,
+        isFolder: isFolder.value
+    })
+
+    if (isFolder.value) {
         // Folders are always clickable for navigation
+        console.log('Opening as folder:', props.file.name)
         emit('open-folder', props.file)
         return
     }
@@ -92,7 +122,15 @@ const handleCardClick = (event) => {
     const isButton = target.tagName === 'BUTTON' || target.closest('button')
     const isDropdown = target.closest('[class*="dropdown"]') || target.closest('.relative')
 
+    console.log('File click details:', {
+        target: target.tagName,
+        isButton,
+        isDropdown,
+        willOpen: !isButton && !isDropdown
+    })
+
     if (!isButton && !isDropdown) {
+        console.log('Opening as file:', props.file.name)
         emit('open-file', props.file)
     }
 }
@@ -165,7 +203,7 @@ const getIconColor = (file) => {
 
             <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
-                    <h3 class="text-sm font-medium truncate mb-1">{{ file.name }}</h3>
+                    <h3 class="text-sm font-medium truncate mb-1">{{ displayName }}</h3>
                     <div class="flex items-center gap-2 text-[10px] text-muted-foreground">
                         <span>{{ file.size }}</span>
                         <span>•</span>

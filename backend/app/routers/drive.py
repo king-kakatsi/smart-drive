@@ -58,6 +58,84 @@ async def get_drive_file_metadata(
         )
 
 
+@router.post("/upload")
+async def upload_file_to_drive(
+    file: UploadFile = File(...),
+    folder_id: str = None,
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Upload file to user's Google Drive"""
+    from fastapi.responses import JSONResponse
+    from googleapiclient.http import MediaIoBaseUpload
+    import io
+
+    try:
+        # Validate file extension
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        allowed_extensions = ['.pdf', '.docx', '.txt', '.md', '.mp4', '.avi', '.mov', '.mp3', '.jpg', '.jpeg', '.png', '.gif']
+        if file_ext not in allowed_extensions:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File type {file_ext} not allowed"
+            )
+
+        # Validate file size (100MB limit)
+        file_content = await file.read()
+        if len(file_content) > 100 * 1024 * 1024:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="File too large"
+            )
+
+        # Get Drive service
+        access_token = await get_valid_access_token_for_user(db, user.id)
+        if not access_token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Google Drive access not configured"
+            )
+
+        # Prepare file metadata
+        file_metadata = {
+            'name': file.filename,
+            'mimeType': file.content_type
+        }
+
+        if folder_id:
+            file_metadata['parents'] = [folder_id]
+
+        # Create media upload
+        media = MediaIoBaseUpload(
+            io.BytesIO(file_content),
+            mimetype=file.content_type,
+            resumable=True
+        )
+
+        # Upload to Drive using the service
+        drive_file = await google_drive_service.upload_file_to_drive(
+            database=db,
+            user_id=user.id,
+            file_metadata=file_metadata,
+            media_body=media
+        )
+
+        return JSONResponse({
+            "id": drive_file['id'],
+            "name": drive_file['name'],
+            "mimeType": drive_file['mimeType'],
+            "size": drive_file.get('size', len(file_content)),
+            "webViewLink": drive_file.get('webViewLink'),
+            "createdTime": drive_file['createdTime']
+        })
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Upload failed: {str(error)}"
+        )
+
+
 @router.get("/files/{file_id}/download")
 async def download_drive_file(
     file_id: str,
