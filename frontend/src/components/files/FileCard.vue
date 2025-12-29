@@ -31,7 +31,7 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['preview', 'open-chat', 'delete', 'download', 'share', 'toggle-star', 'open-folder'])
+const emit = defineEmits(['preview', 'open-chat', 'delete', 'download', 'share', 'toggle-star', 'open-folder', 'open-file'])
 
 const isHovered = ref(false)
 const filesStore = useFilesStore()
@@ -109,7 +109,7 @@ const getIconColor = (file) => {
             ? 'p-4 hover:shadow-lg hover:-translate-y-1 hover:z-[10000]'
             : 'flex items-center gap-4 p-3 hover:bg-muted/50',
         isFolder ? 'cursor-pointer' : ''
-    )" @mouseenter="isHovered = true" @mouseleave="isHovered = false" @click="isFolder ? emit('open-folder', file) : null">
+    )" @mouseenter="isHovered = true" @mouseleave="isHovered = false" @click="isFolder ? emit('open-folder', file) : emit('open-file', file)">
         <!-- Grid View -->
         <template v-if="viewMode === 'grid'">
             <div
@@ -123,11 +123,11 @@ const getIconColor = (file) => {
                     leave-from-class="opacity-100" leave-to-class="opacity-0">
                     <div v-if="isHovered && !isFolder" class="absolute inset-0 bg-black/40 flex items-center justify-center gap-2">
                         <button class="p-2 bg-white rounded-lg hover:scale-110 transition-transform" title="Preview"
-                            @click="emit('preview', file)">
+                            @click.stop="emit('preview', file)">
                             <Eye class="w-4 h-4 text-gray-900" />
                         </button>
                         <button class="p-2 bg-primary rounded-lg hover:scale-110 transition-transform" title="Ask AI"
-                            @click="emit('open-chat', file)">
+                            @click.stop="emit('open-chat', file)">
                             <MessageSquare class="w-4 h-4 text-white" />
                         </button>
                     </div>
@@ -153,14 +153,14 @@ const getIconColor = (file) => {
 
                 <Dropdown class="shrink-0 bg-gray-100">
                     <template #trigger>
-                        <button class="p-1 hover:bg-muted rounded transition-colors">
+                        <button class="p-1 hover:bg-muted rounded transition-colors" @click.stop>
                             <MoreVertical class="w-4 h-4 text-muted-foreground" />
                         </button>
                     </template>
-                    <DropdownItem @click="emit('download', file)">
+                    <DropdownItem @click.stop="emit('download', file)">
                         <Download class="w-4 h-4 mr-2" /> Download
                     </DropdownItem>
-                    <DropdownItem class="text-destructive" @click="emit('delete', file)">
+                    <DropdownItem class="text-destructive" @click.stop="emit('delete', file)">
                         <Trash2 class="w-4 h-4 mr-2" /> Delete
                     </DropdownItem>
                 </Dropdown>
@@ -186,11 +186,11 @@ const getIconColor = (file) => {
             <div v-if="!isFolder" class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                     class="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                    @click="emit('preview', file)">
+                    @click.stop="emit('preview', file)">
                     <Eye class="w-4 h-4" />
                 </button>
                 <button class="p-2 hover:bg-primary/10 rounded-lg transition-colors text-primary"
-                    @click="emit('open-chat', file)">
+                    @click.stop="emit('open-chat', file)">
                     <MessageSquare class="w-4 h-4" />
                 </button>
             </div>
@@ -198,17 +198,17 @@ const getIconColor = (file) => {
             <!-- Dropdown menu (only for files, not folders) -->
             <Dropdown v-if="!isFolder">
                 <template #trigger>
-                    <button class="p-2 hover:bg-muted rounded-lg transition-colors">
+                    <button class="p-2 hover:bg-muted rounded-lg transition-colors" @click.stop>
                         <MoreVertical class="w-4 h-4 text-muted-foreground" />
                     </button>
                 </template>
-                <DropdownItem @click="emit('share', file)">
+                <DropdownItem @click.stop="emit('share', file)">
                     <Share2 class="w-4 h-4 mr-2" /> Share
                 </DropdownItem>
-                <DropdownItem @click="emit('download', file)">
+                <DropdownItem @click.stop="emit('download', file)">
                     <Download class="w-4 h-4 mr-2" /> Download
                 </DropdownItem>
-                <DropdownItem class="text-destructive" @click="emit('delete', file)">
+                <DropdownItem class="text-destructive" @click.stop="emit('delete', file)">
                     <Trash2 class="w-4 h-4 mr-2" /> Delete
                 </DropdownItem>
             </Dropdown>

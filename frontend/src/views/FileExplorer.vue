@@ -50,6 +50,23 @@ const handleDownload = async (file) => {
   }
 }
 
+const handleOpenFile = (file) => {
+  try {
+    // For Google Drive files, use the webViewLink
+    if (file.webViewLink) {
+      window.open(file.webViewLink, '_blank')
+    } else if (file.id && !isNaN(file.id)) {
+      // For local files, use the backend download endpoint
+      const downloadUrl = `/api/v1/files/${file.id}/download`
+      window.open(downloadUrl, '_blank')
+    } else {
+      console.error('Cannot open file: invalid file data', file)
+    }
+  } catch (error) {
+    console.error('Failed to open file:', error)
+  }
+}
+
 const handleDelete = async (file) => {
   if (confirm(`Are you sure you want to delete "${file.name}"?`)) {
     try {
@@ -87,7 +104,7 @@ const handleOpenFolder = (folder) => {
 
 <template>
   <div class="h-full">
-    <FileExplorer @open-chat="handleOpenChat" @show-upload="isUploadOpen = true" @preview-file="handlePreviewFile" @toggle-star="handleToggleStar" @download="handleDownload" @delete="handleDelete" @share="handleShare" @open-folder="handleOpenFolder" />
+    <FileExplorer @open-chat="handleOpenChat" @show-upload="isUploadOpen = true" @preview-file="handlePreviewFile" @toggle-star="handleToggleStar" @download="handleDownload" @delete="handleDelete" @share="handleShare" @open-folder="handleOpenFolder" @open-file="handleOpenFile" />
 
     <!-- Modals -->
     <UploadModal :is-open="isUploadOpen" @close="isUploadOpen = false" />

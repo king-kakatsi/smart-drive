@@ -24,7 +24,8 @@ const props = defineProps({
     onDownload: Function,
     onDelete: Function,
     onShare: Function,
-    onOpenFolder: Function
+    onOpenFolder: Function,
+    onOpenFile: Function
 })
 
 const { viewMode, searchQuery, filteredFiles, setViewMode } = useFiles()
@@ -105,7 +106,7 @@ const sortedFiles = computed(() => {
                         : 'grid-cols-1'
                 )">
                     <FileCard v-for="file in sortedFiles" :key="file.id" :file="file" :view-mode="viewMode"
-                        @preview="onPreviewFile" @open-chat="onOpenChat" @toggle-star="onToggleStar" @download="onDownload" @delete="onDelete" @share="onShare" @open-folder="onOpenFolder" />
+                        @preview="onPreviewFile" @open-chat="onOpenChat" @toggle-star="onToggleStar" @download="onDownload" @delete="onDelete" @share="onShare" @open-folder="onOpenFolder" @open-file="onOpenFile" />
                 </div>
             </div>
 
