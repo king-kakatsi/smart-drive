@@ -27,6 +27,14 @@ const props = defineProps({
 const emit = defineEmits(['close', 'open-chat', 'download', 'delete', 'share'])
 
 const getFileIcon = (file) => {
+    // Handle both file.type and file.mimeType
+    // Check for Google Drive folder first
+    if (file.mimeType === 'application/vnd.google-apps.folder' ||
+        file.type === 'folder' ||
+        file.file_type === 'folder') {
+        return Folder
+    }
+
     const type = file.type || file.mimeType?.split('/').pop() || 'file'
     switch (type.toLowerCase()) {
         case 'pdf':
@@ -46,14 +54,19 @@ const getFileIcon = (file) => {
         case 'png':
         case 'gif':
             return ImageIcon
-        case 'folder':
-            return Folder
         default:
             return File
     }
 }
 
 const getIconColor = (file) => {
+    // Check for Google Drive folder first
+    if (file.mimeType === 'application/vnd.google-apps.folder' ||
+        file.type === 'folder' ||
+        file.file_type === 'folder') {
+        return 'text-yellow-600'
+    }
+
     const type = file.type || file.mimeType?.split('/').pop() || 'file'
     switch (type.toLowerCase()) {
         case 'pdf': return 'text-red-500'
@@ -64,7 +77,6 @@ const getIconColor = (file) => {
         case 'mp3': return 'text-pink-500'
         case 'jpg':
         case 'png': return 'text-orange-500'
-        case 'folder': return 'text-yellow-600'
         default: return 'text-gray-500'
     }
 }

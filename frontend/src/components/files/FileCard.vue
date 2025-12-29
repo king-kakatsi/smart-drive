@@ -48,6 +48,13 @@ const isFolder = computed(() => {
 
 const getFileIcon = (file) => {
     // Handle both file.type and file.mimeType
+    // Check for Google Drive folder first
+    if (file.mimeType === 'application/vnd.google-apps.folder' ||
+        file.type === 'folder' ||
+        file.file_type === 'folder') {
+        return Folder
+    }
+
     const type = file.type || file.mimeType?.split('/').pop() || 'file'
     switch (type.toLowerCase()) {
         case 'pdf':
@@ -67,14 +74,19 @@ const getFileIcon = (file) => {
         case 'png':
         case 'gif':
             return ImageIcon
-        case 'folder':
-            return Folder // Add folder icon for Google Drive folders
         default:
             return File
     }
 }
 
 const getIconColor = (file) => {
+    // Check for Google Drive folder first
+    if (file.mimeType === 'application/vnd.google-apps.folder' ||
+        file.type === 'folder' ||
+        file.file_type === 'folder') {
+        return 'text-yellow-600 bg-yellow-50'
+    }
+
     const type = file.type || file.mimeType?.split('/').pop() || 'file'
     switch (type.toLowerCase()) {
         case 'pdf': return 'text-red-500 bg-red-50'
@@ -85,7 +97,6 @@ const getIconColor = (file) => {
         case 'mp3': return 'text-pink-500 bg-pink-50'
         case 'jpg':
         case 'png': return 'text-orange-500 bg-orange-50'
-        case 'folder': return 'text-yellow-600 bg-yellow-50'
         default: return 'text-gray-500 bg-gray-50'
     }
 }
@@ -95,7 +106,7 @@ const getIconColor = (file) => {
     <div :class="cn(
         'group relative bg-card rounded-xl border border-border transition-all duration-200',
         viewMode === 'grid'
-            ? 'p-4 hover:shadow-lg hover:-translate-y-1'
+            ? 'p-4 hover:shadow-lg hover:-translate-y-1 hover:z-[10000]'
             : 'flex items-center gap-4 p-3 hover:bg-muted/50',
         isFolder ? 'cursor-pointer' : ''
     )" @mouseenter="isHovered = true" @mouseleave="isHovered = false" @click="isFolder ? emit('open-folder', file) : null">
@@ -140,7 +151,7 @@ const getIconColor = (file) => {
                     </div>
                 </div>
 
-                <Dropdown class="shrink-0">
+                <Dropdown class="shrink-0 bg-gray-100">
                     <template #trigger>
                         <button class="p-1 hover:bg-muted rounded transition-colors">
                             <MoreVertical class="w-4 h-4 text-muted-foreground" />
