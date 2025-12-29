@@ -143,7 +143,33 @@ const removeFile = (id) => {
     files.value = files.value.filter(f => f.id !== id)
 }
 
-const handleClose = () => {
+const handleClose = async () => {
+    // If any files were successfully uploaded, refresh all data
+    const hasSuccessfulUploads = files.value.some(f => f.status === 'completed')
+
+    if (hasSuccessfulUploads) {
+        try {
+            // Refresh both local and Google Drive files (full page refresh equivalent)
+            await Promise.all([
+                filesStore.fetchAllFiles('/').catch(error => {
+                    console.warn('Failed to refresh local files:', error.message)
+                }),
+                filesStore.fetchDriveFiles().catch(error => {
+                    console.warn('Failed to refresh Google Drive files:', error.message)
+                })
+            ])
+
+            // Also refresh storage metrics if available
+            filesStore.fetchStorageMetrics().catch(error => {
+                console.warn('Failed to refresh storage metrics:', error.message)
+            })
+
+        } catch (error) {
+            console.warn('Data refresh failed after upload:', error.message)
+        }
+    }
+
+    // Clear files and close modal
     files.value = []
     emit('close')
 }
