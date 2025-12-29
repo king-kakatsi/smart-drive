@@ -194,7 +194,7 @@ onMounted(async () => {
     </div>
 
     <!-- Breadcrumb Navigation -->
-    <div class="mb-4 flex items-center justify-between px-4 lg:px-8">
+    <div class="mt-4 mb-4 flex items-center justify-between px-4 lg:px-8">
       <div class="flex items-center gap-2 text-sm">
         <button
           @click="handleBreadcrumbClick('/')"
