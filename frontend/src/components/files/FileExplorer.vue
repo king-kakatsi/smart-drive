@@ -32,7 +32,8 @@ const props = defineProps({
     onShowUpload: Function,
     onPreviewFile: Function,
     onOpenFolder: Function,
-    onOpenFile: Function
+    onOpenFile: Function,
+    onOpenInTab: Function
 })
 
 const { viewMode, setViewMode } = useFiles()
@@ -80,7 +81,7 @@ const displayFiles = computed(() => props.files)
                         : 'grid-cols-1'
                 )">
                     <FileCard v-for="file in displayFiles" :key="file.id" :file="file" :view-mode="viewMode"
-                        @preview="onPreviewFile" @open-chat="onOpenChat" @download="onDownload" @share="onShare" @open-folder="onOpenFolder" @open-file="onOpenFile" />
+                        @preview="onPreviewFile" @open-chat="onOpenChat" @download="onDownload" @share="onShare" @open-folder="onOpenFolder" @open-file="onOpenFile" @open-in-tab="onOpenInTab" />
                 </div>
             </div>
 

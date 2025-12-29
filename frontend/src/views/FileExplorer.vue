@@ -115,13 +115,45 @@ const handleShare = async (file) => {
       await navigator.clipboard.writeText(file.webViewLink)
       alert('Share link copied to clipboard!')
     } else {
-      // For local files, create a shareable link
-      const shareUrl = `${window.location.origin}/shared/${file.id}`
-      await navigator.clipboard.writeText(shareUrl)
-      alert('Share link copied to clipboard!')
+      // For local files, use the share API endpoint
+      const response = await fetch(`/api/v1/files/${file.id}/share`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        await navigator.clipboard.writeText(data.share_url)
+        alert(`Share link copied to clipboard!\nExpires in ${data.expires_in}`)
+      } else {
+        throw new Error('Failed to generate share link')
+      }
     }
   } catch (error) {
     console.error('Failed to share file:', error)
+    alert('Failed to generate share link. Please try again.')
+  }
+}
+
+const handleOpenInTab = async (file) => {
+  try {
+    // Determine if local or Drive file and open appropriate preview URL
+    if (file.webViewLink) {
+      // Google Drive file - open web view link in new tab
+      window.open(file.webViewLink, '_blank')
+    } else if (file.id && !isNaN(file.id)) {
+      // Local file - use preview endpoint
+      const previewUrl = `/api/v1/files/${file.id}/preview`
+      window.open(previewUrl, '_blank')
+    } else {
+      console.error('Cannot open file in tab: invalid file data', file)
+      alert('Cannot open file: invalid file data')
+    }
+  } catch (error) {
+    console.error('Failed to open file in tab:', error)
+    alert('Failed to open file. Please try again.')
   }
 }
 
@@ -241,6 +273,7 @@ onMounted(async () => {
       @preview-file="handlePreviewFile"
       @open-folder="handleOpenFolder"
       @open-file="handleOpenFile"
+      @open-in-tab="handleOpenInTab"
     />
 
     <!-- Modals -->

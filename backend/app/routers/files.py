@@ -9,7 +9,7 @@ import os
 import shutil
 import uuid
 
-from app.dependencies import get_db, get_optional_user
+from app.dependencies import get_db, get_optional_user, get_current_user
 from app.config import settings
 from app.services.file_service import (
     save_file_metadata,
@@ -148,6 +148,81 @@ async def download_file(
         filename=file_record.original_filename,
         path=file_record.file_path
     )
+
+
+@router.get("/{file_id}/preview")
+async def preview_file(
+    file_id: int,
+    user = Depends(get_optional_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get file content for preview in browser"""
+    # Get file record
+    file_record = await get_file_by_id(file_id, user.id if user else None, db)
+    if not file_record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found"
+        )
+
+    # Verify file exists on filesystem
+    if not os.path.exists(file_record.file_path):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found on server"
+        )
+
+    # For security, only allow preview of certain file types
+    allowed_preview_types = [
+        'application/pdf',
+        'text/plain',
+        'text/markdown',
+        'text/html',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp'
+    ]
+
+    if file_record.mime_type not in allowed_preview_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File type not supported for preview"
+        )
+
+    # Return file for preview
+    return FileResponse(
+        path=file_record.file_path,
+        filename=file_record.original_filename,
+        media_type=file_record.mime_type
+    )
+
+
+@router.post("/{file_id}/share")
+async def share_file(
+    file_id: int,
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Generate shareable link for file"""
+    # Get file record
+    file_record = await get_file_by_id(file_id, user.id, db)
+    if not file_record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found"
+        )
+
+    # Generate a shareable link (simplified implementation)
+    # In a real app, you'd generate a secure token with expiration
+    share_token = f"share_{file_id}_{user.id}"
+    share_url = f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/shared/{share_token}"
+
+    return {
+        "share_url": share_url,
+        "file_name": file_record.original_filename,
+        "expires_in": "24 hours"  # Simplified
+    }
 
 
 @router.post("/folders")

@@ -32,13 +32,22 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['preview', 'open-chat', 'delete', 'download', 'share', 'toggle-star', 'open-folder', 'open-file'])
+const emit = defineEmits(['preview', 'open-chat', 'delete', 'download', 'share', 'toggle-star', 'open-folder', 'open-file', 'open-in-tab'])
 
 const isHovered = ref(false)
 const filesStore = useFilesStore()
 
 const isFileStarred = computed(() => {
     return filesStore.starredFileIds.includes(props.file.id)
+})
+
+const displayName = computed(() => {
+    // Handle multiple possible field names for filename from different sources
+    return props.file.name ||
+           props.file.original_filename ||
+           props.file.filename ||
+           props.file.title ||
+           'Unnamed File'
 })
 
 const displayName = computed(() => {
@@ -187,7 +196,7 @@ const getIconColor = (file) => {
                             <MessageSquare class="w-4 h-4 text-white" />
                         </button>
                         <button class="p-2 bg-green-500 rounded-lg hover:scale-110 transition-transform" title="Open in New Tab"
-                            @click.stop="emit('open-file', file)">
+                            @click.stop="emit('open-in-tab', file)">
                             <ExternalLink class="w-4 h-4 text-white" />
                         </button>
                     </div>
@@ -234,7 +243,7 @@ const getIconColor = (file) => {
             </div>
 
             <div class="flex-1 min-w-0">
-                <h3 class="text-sm font-medium truncate">{{ file.name }}</h3>
+                <h3 class="text-sm font-medium truncate">{{ displayName }}</h3>
                 <p class="text-[10px] text-muted-foreground">{{ (file.type || file.mimeType?.split('/').pop() || 'FILE').toUpperCase() }} • {{ file.size }}</p>
             </div>
 
@@ -254,7 +263,7 @@ const getIconColor = (file) => {
                     <MessageSquare class="w-4 h-4" />
                 </button>
                 <button class="p-2 hover:bg-green-500/10 rounded-lg transition-colors text-green-600 hover:text-green-700"
-                    @click.stop="emit('open-file', file)">
+                    @click.stop="emit('open-in-tab', file)">
                     <ExternalLink class="w-4 h-4" />
                 </button>
             </div>

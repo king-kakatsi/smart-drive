@@ -78,21 +78,31 @@ const uploadFile = async (fileId) => {
 
         // Choose upload service based on destination
         if (uploadDestination.value === 'local') {
+            console.log('📤 Uploading to local storage:', fileItem.file.name)
             uploadedFile = await fileService.uploadFile(fileItem.file)
+            console.log('✅ Local upload successful:', uploadedFile)
         } else if (uploadDestination.value === 'drive') {
+            console.log('☁️ Uploading to Google Drive:', fileItem.file.name)
             uploadedFile = await driveService.uploadFileToDrive(fileItem.file)
+            console.log('✅ Google Drive upload response:', uploadedFile)
         }
 
         fileItem.status = 'completed'
         fileItem.progress = 100
 
-        // Update the files store to include the new file
-        if (filesStore.fetchAllFiles) {
-            await filesStore.fetchAllFiles()
+        // Update the files store based on upload destination
+        console.log('🔄 Refreshing file list...')
+        if (uploadDestination.value === 'local') {
+            await filesStore.fetchAllFiles('/')
+        } else if (uploadDestination.value === 'drive') {
+            await filesStore.fetchDriveFiles()
         }
+        console.log('📊 Files store updated after upload')
 
     } catch (error) {
-        console.error('Upload failed:', error)
+        console.error('❌ Upload failed:', error)
+        console.error('Error details:', error.message)
+        console.error('Stack trace:', error.stack)
         fileItem.status = 'error'
         fileItem.error = error.message || 'Upload failed'
         fileItem.progress = 0
