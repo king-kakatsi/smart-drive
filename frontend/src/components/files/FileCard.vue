@@ -13,7 +13,8 @@ import {
     Download,
     Trash2,
     Share2,
-    Star
+    Star,
+    ExternalLink
 } from 'lucide-vue-next'
 import { cn } from '@/utils/cn'
 import { useFilesStore } from '@/stores/files'
@@ -147,6 +148,10 @@ const getIconColor = (file) => {
                             @click.stop="emit('open-chat', file)">
                             <MessageSquare class="w-4 h-4 text-white" />
                         </button>
+                        <button class="p-2 bg-green-500 rounded-lg hover:scale-110 transition-transform" title="Open in New Tab"
+                            @click.stop="emit('open-file', file)">
+                            <ExternalLink class="w-4 h-4 text-white" />
+                        </button>
                     </div>
                 </Transition>
 
@@ -209,6 +214,10 @@ const getIconColor = (file) => {
                 <button class="p-2 hover:bg-primary/10 rounded-lg transition-colors text-primary"
                     @click.stop="emit('open-chat', file)">
                     <MessageSquare class="w-4 h-4" />
+                </button>
+                <button class="p-2 hover:bg-green-500/10 rounded-lg transition-colors text-green-600 hover:text-green-700"
+                    @click.stop="emit('open-file', file)">
+                    <ExternalLink class="w-4 h-4" />
                 </button>
             </div>
 
