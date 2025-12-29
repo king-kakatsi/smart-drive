@@ -56,17 +56,6 @@ const isFolder = computed(() => {
            props.file.file_type === 'folder'
 })
 
-// Debug: Log file object structure
-console.log('FileCard file object:', {
-    id: props.file.id,
-    name: props.file.name,
-    filename: props.file.filename,
-    original_filename: props.file.original_filename,
-    title: props.file.title,
-    mimeType: props.file.mimeType,
-    type: props.file.type,
-    file_type: props.file.file_type
-})
 
 const getFileIcon = (file) => {
     // Handle both file.type and file.mimeType
@@ -102,17 +91,9 @@ const getFileIcon = (file) => {
 }
 
 const handleCardClick = (event) => {
-    console.log('FileCard clicked:', {
-        name: props.file.name,
-        mimeType: props.file.mimeType,
-        type: props.file.type,
-        file_type: props.file.file_type,
-        isFolder: isFolder.value
-    })
 
     if (isFolder.value) {
         // Folders are always clickable for navigation
-        console.log('Opening as folder:', props.file.name)
         emit('open-folder', props.file)
         return
     }
@@ -122,15 +103,8 @@ const handleCardClick = (event) => {
     const isButton = target.tagName === 'BUTTON' || target.closest('button')
     const isDropdown = target.closest('[class*="dropdown"]') || target.closest('.relative')
 
-    console.log('File click details:', {
-        target: target.tagName,
-        isButton,
-        isDropdown,
-        willOpen: !isButton && !isDropdown
-    })
 
     if (!isButton && !isDropdown) {
-        console.log('Opening as file:', props.file.name)
         emit('open-file', props.file)
     }
 }

@@ -56,12 +56,6 @@ class DriveService {
    * Upload file to Google Drive
    */
   async uploadFileToDrive(file, folderId = null) {
-    console.log('🚀 Starting Google Drive upload:', {
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      folderId: folderId
-    })
 
     const formData = new FormData()
     formData.append('file', file)
@@ -71,11 +65,8 @@ class DriveService {
 
     try {
       const response = await apiClient.uploadFile('/api/v1/drive/upload', formData)
-      console.log('✅ Google Drive upload successful:', response)
       return response
     } catch (error) {
-      console.error('❌ Google Drive upload failed:', error)
-      console.error('Error response:', error)
       throw error
     }
   }
