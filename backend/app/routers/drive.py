@@ -66,25 +66,51 @@ async def download_drive_file(
 ):
     """Download file content from Drive"""
     from fastapi.responses import Response
-    
+
     try:
-        file_content = await google_drive_service.download_file_content_from_drive(
-            database=db,
-            user_id=user.id,
-            file_id=file_id
-        )
-        
-        # Get file metadata for proper content type
+        # Get file metadata first to determine download approach
         metadata = await google_drive_service.get_file_metadata_from_drive(
             database=db,
             user_id=user.id,
             file_id=file_id
         )
-        
+
+        original_mime_type = metadata.get("mimeType", "")
+        original_filename = metadata.get("name", "file")
+
+        # Determine if this is a Google native file that will be exported
+        export_mime_types = {
+            "application/vnd.google-apps.document": ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"),
+            "application/vnd.google-apps.spreadsheet": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
+            "application/vnd.google-apps.presentation": ("application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx"),
+            "application/vnd.google-apps.drawing": ("application/pdf", ".pdf"),
+        }
+
+        # Download the file (will auto-export Google native files)
+        file_content = await google_drive_service.download_file_content_from_drive(
+            database=db,
+            user_id=user.id,
+            file_id=file_id
+        )
+
+        # Determine final mime type and filename
+        if original_mime_type in export_mime_types:
+            # This was exported - use export mime type and add extension
+            final_mime_type, extension = export_mime_types[original_mime_type]
+            # Add extension if not already present
+            if not original_filename.lower().endswith(extension.lower()):
+                final_filename = original_filename + extension
+            else:
+                final_filename = original_filename
+        else:
+            # Regular file - use original metadata
+            final_mime_type = original_mime_type
+            final_filename = original_filename
+
         return Response(
             content=file_content,
-            media_type=metadata.get("mimeType", "application/octet-stream"),
-            headers={"Content-Disposition": f'attachment; filename="{metadata.get("name", "file")}"'}
+            media_type=final_mime_type or "application/octet-stream",
+            headers={"Content-Disposition": f'attachment; filename="{final_filename}"'}
         )
     except Exception as error:
         raise HTTPException(

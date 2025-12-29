@@ -95,21 +95,42 @@ class GoogleDriveService:
     ) -> bytes:
         """
         Download file content from Drive
-        
+
         Args:
             database: Database session
             user_id: User ID
             file_id: Google Drive file ID
-        
+
         Returns:
             bytes: File content
         """
         access_token = await get_valid_access_token_for_user(database, user_id)
-        
+
         if not access_token:
             raise Exception("No valid Google Drive token found for user")
-        
-        # Download file using Drive API
+
+        # Get file metadata to check if it's a Google native file
+        metadata = await self.get_file_metadata_from_drive(database, user_id, file_id)
+        mime_type = metadata.get("mimeType", "")
+
+        # Check if this is a Google native file that needs export
+        if mime_type.startswith("application/vnd.google-apps."):
+            # Map Google native files to export formats
+            export_formats = {
+                "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # DOCX
+                "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # XLSX
+                "application/vnd.google-apps.presentation": "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # PPTX
+                "application/vnd.google-apps.drawing": "application/pdf",  # PDF
+            }
+
+            export_mime_type = export_formats.get(mime_type)
+            if export_mime_type:
+                # Export the Google native file
+                return await self.drive_client.export_file(access_token, file_id, export_mime_type)
+            else:
+                raise Exception(f"Cannot export Google file type: {mime_type}")
+
+        # Regular file - download directly
         return await self.drive_client.download_file(access_token, file_id)
     
     async def search_files_in_drive(

@@ -6,6 +6,8 @@ import { useFilesStore } from '@/stores/files'
 import FileExplorer from '@/components/files/FileExplorer.vue'
 import UploadModal from '@/components/files/UploadModal.vue'
 import FilePreviewModal from '@/components/files/FilePreviewModal.vue'
+import fileService from '@/services/api/fileService'
+import driveService from '@/services/api/driveService'
 
 const router = useRouter()
 const chatStore = useChatStore()
@@ -35,31 +37,37 @@ const handleToggleStar = async (file) => {
 
 const handleDownload = async (file) => {
   try {
-    let downloadUrl = ''
+    let blob
+    let filename = file.name || 'download'
 
-    // Determine the download URL
+    // Get file blob using authenticated request
     if (file.webViewLink) {
-      // For Google Drive files, use the drive download endpoint
-      downloadUrl = `/api/v1/drive/files/${file.id}/download`
+      // Google Drive file
+      blob = await driveService.downloadDriveFile(file.id)
     } else if (file.id && !isNaN(file.id)) {
-      // For local files, use the backend download endpoint
-      downloadUrl = `/api/v1/files/${file.id}/download`
+      // Local file
+      blob = await fileService.downloadFile(file.id)
     } else {
       console.error('Cannot download file: invalid file data', file)
       return
     }
 
-    // Create a temporary link and trigger download
+    // Create download link from blob
+    const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
-    link.href = downloadUrl
-    link.download = file.name || 'download'
+    link.href = url
+    link.download = filename
     link.style.display = 'none'
 
     document.body.appendChild(link)
     link.click()
+
+    // Cleanup
     document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
   } catch (error) {
     console.error('Failed to download file:', error)
+    throw error
   }
 }
 

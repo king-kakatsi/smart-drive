@@ -114,6 +114,25 @@ class GoogleDriveClient:
 
                 return await response.read()
 
+    async def export_file(self, access_token: str, file_id: str, mime_type: str) -> bytes:
+        """Export a Google native file to a standard format"""
+
+        export_url = f"https://www.googleapis.com/drive/v3/files/{file_id}/export"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Accept": mime_type
+        }
+
+        params = {"mimeType": mime_type}
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(export_url, headers=headers, params=params) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"Failed to export file: {response.status} - {error_text}")
+
+                return await response.read()
+
     async def delete_file(self, access_token: str, file_id: str) -> bool:
         """Delete (trash) a file from Google Drive by setting trashed=true"""
         print(f"Making PATCH request to Google Drive API for file {file_id}")
