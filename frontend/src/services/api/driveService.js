@@ -53,6 +53,13 @@ class DriveService {
   }
 
   /**
+   * Delete (trash) a Drive file
+   */
+  async deleteDriveFile(fileId) {
+    return await apiClient.delete(`/api/v1/drive/files/${fileId}`)
+  }
+
+  /**
    * Get storage and quota metrics
    */
   async getStorageMetrics() {

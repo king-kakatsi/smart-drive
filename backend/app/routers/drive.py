@@ -150,6 +150,30 @@ async def sync_drive_files(
         )
 
 
+@router.delete("/files/{file_id}")
+async def delete_drive_file(
+    file_id: str,
+    user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Delete (trash) a file from Google Drive"""
+    try:
+        print(f"Deleting Drive file {file_id} for user {user.id}")
+        result = await google_drive_service.delete_file_from_drive(
+            database=db,
+            user_id=user.id,
+            file_id=file_id
+        )
+        print(f"Successfully deleted Drive file {file_id}")
+        return {"message": "File moved to trash successfully", "deleted": result}
+    except Exception as error:
+        print(f"Error deleting Drive file {file_id}: {str(error)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete file: {str(error)}"
+        )
+
+
 @router.get("/metrics")
 async def get_storage_metrics(
     user = Depends(get_current_user),
@@ -158,8 +182,8 @@ async def get_storage_metrics(
     """Get user's storage and file metrics"""
     try:
         quota = await google_drive_service.get_storage_quota(db, user.id)
-        
-        # We can also fetch the file count here if we want, 
+
+        # We can also fetch the file count here if we want,
         # but for now just returning the quota
         return {
             "quota": quota.get("storageQuota", {}),

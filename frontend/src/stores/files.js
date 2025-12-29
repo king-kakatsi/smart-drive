@@ -147,8 +147,31 @@ export const useFilesStore = defineStore('files', {
       this.error = null
 
       try {
-        await fileService.deleteFile(fileId)
-        this.localFiles = this.localFiles.filter(f => f.id !== fileId)
+        // Find the file to determine if it's local or from Drive
+        let file = this.localFiles.find(f => f.id === fileId)
+        let isDriveFile = false
+
+        if (!file) {
+          file = this.driveFiles.find(f => f.id === fileId)
+          isDriveFile = true
+        }
+
+        if (!file) {
+          throw new Error('File not found')
+        }
+
+        // Delete using appropriate service
+        if (isDriveFile || file.webViewLink) {
+          // Google Drive file
+          await driveService.deleteDriveFile(fileId)
+          this.driveFiles = this.driveFiles.filter(f => f.id !== fileId)
+        } else {
+          // Local file
+          await fileService.deleteFile(fileId)
+          this.localFiles = this.localFiles.filter(f => f.id !== fileId)
+        }
+
+        // Remove from selected files
         this.selectedFiles = this.selectedFiles.filter(id => id !== fileId)
       } catch (error) {
         this.error = error.detail || 'Failed to delete file'

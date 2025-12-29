@@ -25,7 +25,7 @@ class GoogleDriveClient:
         params = {
             "client_id": self.client_id,
             "redirect_uri": self.redirect_uri,
-            "scope": "openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file",
+            "scope": "openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive",
             "response_type": "code",
             "access_type": "offline",
             "prompt": "consent"
@@ -113,6 +113,28 @@ class GoogleDriveClient:
                     raise Exception(f"Failed to download file: {response.status} - {error_text}")
 
                 return await response.read()
+
+    async def delete_file(self, access_token: str, file_id: str) -> bool:
+        """Delete (trash) a file from Google Drive by setting trashed=true"""
+        print(f"Making PATCH request to Google Drive API for file {file_id}")
+        update_url = f"https://www.googleapis.com/drive/v3/files/{file_id}?fields=trashed"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        data = {"trashed": True}
+
+        async with aiohttp.ClientSession() as session:
+            async with session.patch(update_url, headers=headers, json=data) as response:
+                print(f"Google Drive API response status: {response.status}")
+                if response.status == 200:
+                    return True
+                elif response.status == 404:
+                    raise Exception(f"File {file_id} not found")
+                else:
+                    error_text = await response.text()
+                    print(f"Error response: {error_text}")
+                    raise Exception(f"Failed to delete file: {response.status} - {error_text}")
 
     async def get_storage_quota(self, access_token: str) -> Dict[str, Any]:
         """Get Google Drive storage quota info"""

@@ -4,16 +4,17 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useFilesStore } from '@/stores/files'
 import { onMounted } from 'vue'
-import { 
-  Home, 
-  Folder, 
-  Clock, 
-  Star, 
-  Trash2, 
-  Cloud, 
-  Settings, 
-  Plus, 
-  LayoutDashboard 
+import {
+  Home,
+  Folder,
+  Clock,
+  Star,
+  Trash2,
+  Cloud,
+  Settings,
+  Plus,
+  LayoutDashboard,
+  LogOut
 } from 'lucide-vue-next'
 import { cn } from '@/utils/cn'
 import BaseButton from '@/components/common/BaseButton.vue'
@@ -34,7 +35,7 @@ const userInitials = computed(() => {
 })
 
 const handleLogout = async () => {
-  await authStore.logout()
+  await authStore.handleLogout()
   router.push({ name: 'Login' })
 }
 
@@ -43,7 +44,7 @@ const navItems = [
   { name: 'All Files', icon: Folder, path: '/files' },
   { name: 'Recent', icon: Clock, path: '/recent' },
   { name: 'Starred', icon: Star, path: '/starred' },
-  { name: 'Trash', icon: Trash2, path: '/trash' },
+  // { name: 'Trash', icon: Trash2, path: '/trash' },
 ]
 
 const filesStore = useFilesStore()
@@ -124,10 +125,9 @@ const isActive = (path) => route.path === path
       </div>
 
       <!-- User Profile -->
-      <div 
+      <div
         class="flex items-center gap-3 p-3 rounded-lg hover:bg-sidebar-accent transition-colors cursor-pointer group relative"
-        @click="handleLogout"
-        title="Click to Logout"
+        title="User Profile"
       >
         <div class="w-10 h-10 rounded-full bg-gradient-to-br from-secondary to-accent flex items-center justify-center text-white font-medium shadow-inner group-hover:scale-105 transition-transform">
           {{ userInitials }}
@@ -137,6 +137,21 @@ const isActive = (path) => route.path === path
           <p class="text-xs text-muted-foreground truncate">{{ user.email }}</p>
         </div>
       </div>
+
+      <!-- Logout Button -->
+      <button
+        @click="handleLogout"
+        class="flex items-center gap-3 p-3 rounded-lg hover:bg-sidebar-accent transition-colors cursor-pointer group relative w-full text-left"
+        title="Logout"
+      >
+        <div class="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white shadow-inner group-hover:scale-105 transition-transform">
+          <LogOut class="w-4 h-4" />
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium">Logout</p>
+          <p class="text-xs text-muted-foreground">Sign out of your account</p>
+        </div>
+      </button>
     </div>
   </div>
 </template>

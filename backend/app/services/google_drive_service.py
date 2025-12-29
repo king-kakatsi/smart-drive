@@ -178,6 +178,33 @@ class GoogleDriveService:
             
         return await self.drive_client.get_storage_quota(access_token)
 
+    async def delete_file_from_drive(
+        self,
+        database: AsyncSession,
+        user_id: int,
+        file_id: str
+    ) -> bool:
+        """
+        Delete (trash) a file from Google Drive
+
+        Args:
+            database: Database session
+            user_id: User ID
+            file_id: Google Drive file ID
+
+        Returns:
+            bool: True if successfully deleted
+        """
+        print(f"Getting access token for user {user_id}")
+        access_token = await get_valid_access_token_for_user(database, user_id)
+
+        if not access_token:
+            raise Exception("No valid Google Drive token found for user")
+
+        print(f"Calling drive client to delete file {file_id}")
+        # Delete file using Drive API (moves to trash)
+        return await self.drive_client.delete_file(access_token, file_id)
+
 
 # Global service instance
 google_drive_service = GoogleDriveService()
