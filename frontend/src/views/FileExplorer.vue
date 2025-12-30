@@ -180,9 +180,10 @@ const getPathUpTo = (index) => {
 // Handle folder clicks
 const handleOpenFolder = async (folder) => {
   try {
+    const folderName = folder.name || folder.original_filename || folder.filename || 'Unnamed Folder'
     const newPath = currentPath.value === '/'
-      ? `/${folder.name}`
-      : `${currentPath.value}/${folder.name}`
+      ? `/${folderName}`
+      : `${currentPath.value}/${folderName}`
 
     await filesStore.navigateToFolder(newPath, folder.id)
   } catch (error) {

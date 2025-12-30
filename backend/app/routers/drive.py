@@ -69,6 +69,7 @@ async def get_drive_file_metadata(
 async def upload_file_to_drive(
     file: UploadFile = File(...),
     folder_id: Optional[str] = Form(None),
+    folder_path: str = Form("/"),
     background_tasks: BackgroundTasks = BackgroundTasks(),
     user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
@@ -151,7 +152,7 @@ async def upload_file_to_drive(
             mime_type=file.content_type,
             file_type=file_type,
             user_id=user.id,
-            folder_path="/", # Default for drive files for now
+            folder_path=folder_path,
             db=db,
             drive_file_id=drive_file['id']
         )

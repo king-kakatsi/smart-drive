@@ -20,7 +20,7 @@ export const useFilesStore = defineStore('files', {
     folderHistory: ['/'],
     folderContents: [],
     isNavigating: false,
-    folderIdMap: {}, // Maps folder paths to Drive folder IDs
+    folderIdMap: JSON.parse(localStorage.getItem('folderIdMap') || '{}'), // Maps folder paths to Drive folder IDs
     storageMetrics: {
       used: 0,
       total: 15 * 1024 * 1024 * 1024, // 15GB default
@@ -415,9 +415,10 @@ export const useFilesStore = defineStore('files', {
           this.folderHistory.push(folderPath)
         }
 
-        // Store folder ID mapping for Google Drive
+        // Store folder ID mapping for Google Drive and persist it
         if (folderId) {
           this.folderIdMap[folderPath] = folderId
+          localStorage.setItem('folderIdMap', JSON.stringify(this.folderIdMap))
         }
 
         await this.fetchFolderContents(folderPath)
@@ -491,10 +492,8 @@ export const useFilesStore = defineStore('files', {
       // This is a simplified approach - in a real implementation,
       // you might want to cache folder hierarchies
       try {
-        const response = await driveService.listDriveFiles(1000) // Get more files
-        return (response.files || []).filter(file =>
-          file.parents && file.parents.includes(folderId)
-        )
+        const response = await driveService.listDriveFiles(1000, null, folderId)
+        return response.files || []
       } catch (error) {
         console.error('Failed to fetch Drive folder contents:', error)
         return []

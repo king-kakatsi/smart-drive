@@ -75,24 +75,32 @@ const uploadFile = async (fileId) => {
     try {
         // First, try Google Drive upload
         try {
-            const uploadedFile = await driveService.uploadFileToDrive(fileItem.file)
+            const currentPath = filesStore.currentFolderPath || '/'
+            const folderId = filesStore.folderIdMap[currentPath]
+
+            const uploadedFile = await driveService.uploadFileToDrive(
+                fileItem.file,
+                folderId,
+                currentPath
+            )
 
             fileItem.status = 'completed'
             fileItem.progress = 100
 
-            await filesStore.fetchDriveFiles()
+            await filesStore.fetchFolderContents(currentPath)
 
         } catch (driveError) {
             // Google Drive failed, fallback to local storage
             console.warn('Google Drive upload failed, falling back to local storage:', driveError.message)
 
             try {
-                const uploadedFile = await fileService.uploadFile(fileItem.file)
+                const currentPath = filesStore.currentFolderPath || '/'
+                const uploadedFile = await fileService.uploadFile(fileItem.file, currentPath)
 
                 fileItem.status = 'completed'
                 fileItem.progress = 100
 
-                await filesStore.fetchAllFiles('/')
+                await filesStore.fetchFolderContents(currentPath)
 
                 // Mark that this was uploaded locally as fallback
                 fileItem.uploadMode = 'local_fallback'
@@ -149,15 +157,11 @@ const handleClose = async () => {
 
     if (hasSuccessfulUploads) {
         try {
-            // Refresh both local and Google Drive files (full page refresh equivalent)
-            await Promise.all([
-                filesStore.fetchAllFiles('/').catch(error => {
-                    console.warn('Failed to refresh local files:', error.message)
-                }),
-                filesStore.fetchDriveFiles().catch(error => {
-                    console.warn('Failed to refresh Google Drive files:', error.message)
-                })
-            ])
+            // Refresh both local and Google Drive files for current folder
+            const currentPath = filesStore.currentFolderPath || '/'
+            await filesStore.fetchFolderContents(currentPath).catch(error => {
+                console.warn('Failed to refresh folder contents:', error.message)
+            })
 
             // Also refresh storage metrics if available
             filesStore.fetchStorageMetrics().catch(error => {
@@ -233,7 +237,8 @@ const retryUpload = (id) => {
                             <CheckCircle2 v-if="file.status === 'completed'" class="w-4 h-4 text-green-500" />
                             <AlertCircle v-else-if="file.status === 'error'" class="w-4 h-4 text-red-500"
                                 title="Upload failed" />
-                            <Loader2 v-else-if="file.status === 'uploading'" class="w-4 h-4 animate-spin text-primary" />
+                            <Loader2 v-else-if="file.status === 'uploading'"
+                                class="w-4 h-4 animate-spin text-primary" />
                             <div v-else class="flex items-center gap-1">
                                 <button class="p-1 hover:bg-background rounded transition-colors"
                                     @click.stop="removeFile(file.id)" title="Remove file">
@@ -247,7 +252,7 @@ const retryUpload = (id) => {
                         <Progress :value="file.progress" class="h-1.5" />
                         <p class="text-[10px] text-muted-foreground">
                             {{ file.status === 'completed' ? 'Upload completed' :
-                               `Uploading... ${Math.round(file.progress)}%` }}
+                                `Uploading... ${Math.round(file.progress)}%` }}
                         </p>
                     </div>
                     <div v-if="file.status === 'error'" class="space-y-1">
@@ -258,28 +263,22 @@ const retryUpload = (id) => {
 
             <!-- Submit and Cancel Buttons -->
             <div v-if="files.length > 0" class="flex gap-3 justify-end pt-4 border-t border-border">
-                <BaseButton
-                    variant="outline"
-                    @click="handleClose"
-                    :disabled="isUploadingAll">
+                <BaseButton variant="outline" @click="handleClose" :disabled="isUploadingAll">
                     Cancel
                 </BaseButton>
-                <BaseButton
-                    v-if="!files.every(f => f.status === 'completed')"
-                    @click="uploadAllFiles"
+                <BaseButton v-if="!files.every(f => f.status === 'completed')" @click="uploadAllFiles"
                     :disabled="isUploadingAll">
                     <Loader2 v-if="isUploadingAll" class="w-4 h-4 mr-2 animate-spin" />
                     {{ isUploadingAll ? 'Uploading...' : 'Submit' }}
                 </BaseButton>
-                <BaseButton
-                    v-if="files.every(f => f.status === 'completed')"
-                    @click="handleClose">
+                <BaseButton v-if="files.every(f => f.status === 'completed')" @click="handleClose">
                     Done
                 </BaseButton>
             </div>
 
             <!-- Fallback notification -->
-            <div v-if="files.some(f => f.uploadMode === 'local_fallback')" class="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+            <div v-if="files.some(f => f.uploadMode === 'local_fallback')"
+                class="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
                 <p class="text-sm text-orange-800">
                     Some files were stored locally because Google Drive is not available.
                     Connect your Google Drive account to enable cloud storage.

@@ -8,8 +8,8 @@ class DriveService {
   /**
    * List files from Google Drive
    */
-  async listDriveFiles(pageSize = 100, pageToken = null) {
-    let endpoint = `/api/v1/drive/files?page_size=${pageSize}`
+  async listDriveFiles(pageSize = 100, pageToken = null, folderId = 'root') {
+    let endpoint = `/api/v1/drive/files?page_size=${pageSize}&folder_id=${folderId}`
     if (pageToken) {
       endpoint += `&page_token=${pageToken}`
     }
@@ -55,13 +55,14 @@ class DriveService {
   /**
    * Upload file to Google Drive
    */
-  async uploadFileToDrive(file, folderId = null) {
+  async uploadFileToDrive(file, folderId = null, folderPath = '/') {
 
     const formData = new FormData()
     formData.append('file', file)
     if (folderId) {
       formData.append('folder_id', folderId)
     }
+    formData.append('folder_path', folderPath)
 
     try {
       const response = await apiClient.uploadFile('/api/v1/drive/upload', formData)
