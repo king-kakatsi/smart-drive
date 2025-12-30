@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import {
     X,
     MessageSquare,
@@ -80,6 +81,40 @@ const getIconColor = (file) => {
         default: return 'text-gray-500'
     }
 }
+
+const previewUrl = computed(() => {
+    if (!props.file) return null
+
+    // 1. If it's a Drive file with a thumbnail, use it
+    if (props.file.thumbnailLink) {
+        // thumbnailLink is usually small, but we can try to get a larger one by removing =s220
+        return props.file.thumbnailLink.replace(/=s\d+$/, '=s1000')
+    }
+
+    // 2. If it's a local file or synced file with local copy, use our preview endpoint
+    const localId = props.file.local_id || (!isNaN(props.file.id) ? props.file.id : null)
+    if (localId) {
+        const token = localStorage.getItem('access_token')
+        return `/api/v1/files/${localId}/preview?token=${token}`
+    }
+
+    // 3. Fallback to webViewLink for Drive files if nothing else
+    if (props.file.webViewLink) {
+        return props.file.webViewLink
+    }
+
+    return null
+})
+
+const isImage = computed(() => {
+    const type = (props.file?.type || props.file?.mimeType?.split('/').pop() || '').toLowerCase()
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'image'].includes(type)
+})
+
+const isPDF = computed(() => {
+    const type = (props.file?.type || props.file?.mimeType?.split('/').pop() || '').toLowerCase()
+    return type === 'pdf'
+})
 </script>
 
 <template>
@@ -95,9 +130,13 @@ const getIconColor = (file) => {
 
                 <!-- Preview Content -->
                 <div class="w-full h-full flex items-center justify-center">
-                    <template v-if="(file.type || file.mimeType?.split('/').pop()) === 'jpg' || (file.type || file.mimeType?.split('/').pop()) === 'png'">
-                        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop"
-                            class="max-w-full max-h-full rounded-lg shadow-2xl object-contain" />
+                    <template v-if="isImage && previewUrl">
+                        <img :src="previewUrl"
+                            class="max-w-full max-h-full rounded-lg shadow-2xl object-contain border border-white/10"
+                            @error="(e) => e.target.src = ''" />
+                    </template>
+                    <template v-else-if="isPDF && previewUrl">
+                         <iframe :src="previewUrl" class="w-full h-full rounded-lg border-0 bg-white" shadow-2xl></iframe>
                     </template>
                     <template v-else-if="(file.type || file.mimeType?.split('/').pop()) === 'mp4'">
                         <div
@@ -112,6 +151,9 @@ const getIconColor = (file) => {
                                 <component :is="getFileIcon(file)" class="w-16 h-16" />
                             </div>
                             <p class="text-muted-foreground text-sm">Preview not available for this file type</p>
+                            <BaseButton v-if="file.webViewLink" variant="outline" size="sm" @click="window.open(file.webViewLink, '_blank')">
+                                View on Google Drive
+                            </BaseButton>
                         </div>
                     </template>
                 </div>

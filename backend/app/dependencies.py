@@ -22,18 +22,24 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
+    token: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
-    """Current user dependency with JWT validation"""
-    if not credentials:
+    """Current user dependency with JWT validation (supports Header and Query token)"""
+    actual_token = None
+    if credentials:
+        actual_token = credentials.credentials
+    elif token:
+        actual_token = token
+
+    if not actual_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = credentials.credentials
-    user = await verify_token(token, db)
+    user = await verify_token(actual_token, db)
 
     if not user:
         raise HTTPException(
@@ -47,14 +53,20 @@ async def get_current_user(
 
 async def get_optional_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
+    token: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
-    """Optional user dependency (for endpoints that work with/without auth)"""
-    if not credentials:
+    """Optional user dependency (supports Header and Query token)"""
+    actual_token = None
+    if credentials:
+        actual_token = credentials.credentials
+    elif token:
+        actual_token = token
+
+    if not actual_token:
         return None
 
-    token = credentials.credentials
-    user = await verify_token(token, db)
+    user = await verify_token(actual_token, db)
     return user
 
 

@@ -33,7 +33,45 @@ export const useFilesStore = defineStore('files', {
      * Combine local and drive files
      */
     allFiles: (state) => {
-      return [...state.localFiles, ...state.driveFiles]
+      const fileMap = new Map()
+      
+      // 1. Add all local records first
+      state.localFiles.forEach(localFile => {
+        // Use drive_file_id as key if it exists, otherwise use local ID
+        const key = localFile.drive_file_id || `local_${localFile.id}`
+        fileMap.set(key, { 
+          ...localFile, 
+          name: localFile.original_filename || localFile.filename || localFile.name,
+          isLocal: true 
+        })
+      })
+      
+      // 2. Merge in Drive records
+      state.driveFiles.forEach(driveFile => {
+        const key = driveFile.id
+        if (fileMap.has(key)) {
+          const localRecord = fileMap.get(key)
+          fileMap.set(key, {
+            ...localRecord, // Local intelligence (processed, file_type, path)
+            ...driveFile,   // Priority: Drive richness (Name, webViewLink, thumbnailLink, size)
+            id: driveFile.id, // Ensure primary ID is the Drive string ID
+            local_id: localRecord.id, // Keep numeric ID for backend operations
+            drive_file_id: driveFile.id,
+            isSynced: true,
+            isLocal: true
+          })
+        } else {
+          // Drive file not in local database yet
+          fileMap.set(key, { 
+            ...driveFile, 
+            id: driveFile.id, 
+            drive_file_id: driveFile.id,
+            isDriveOnly: true 
+          })
+        }
+      })
+      
+      return Array.from(fileMap.values())
     },
 
     /**
@@ -167,12 +205,14 @@ export const useFilesStore = defineStore('files', {
         }
 
         // Update appropriate arrays
-        if (isDriveFile || file.webViewLink) {
-          // Google Drive file
-          await driveService.deleteDriveFile(fileId)
-          this.driveFiles = this.driveFiles.filter(f => f.id !== fileId)
+        if (file.drive_file_id) {
+          // Google Drive file (synced or standalone)
+          await driveService.deleteDriveFile(file.drive_file_id)
+          this.driveFiles = this.driveFiles.filter(f => f.id !== file.drive_file_id)
+          // If it was also in localFiles, it should be filtered out from folderContents later
+          this.localFiles = this.localFiles.filter(f => f.drive_file_id !== file.drive_file_id)
         } else {
-          // Local file
+          // Local only file
           await fileService.deleteFile(fileId)
           this.localFiles = this.localFiles.filter(f => f.id !== fileId)
         }
