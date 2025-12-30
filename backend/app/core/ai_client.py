@@ -4,6 +4,7 @@ OpenAI-compatible API interface
 """
 import aiohttp
 import json
+import base64
 from typing import List, Dict, Any, AsyncGenerator
 from app.config import settings
 
@@ -77,6 +78,56 @@ class GroqClient:
                     result = await response.json()
                     content = result['choices'][0]['message']['content']
                     yield content
+
+    async def describe_image(self, image_path: str) -> str:
+        """Generate a description for an image using a vision model"""
+        
+        # Read and encode image as base64
+        with open(image_path, "rb") as image_file:
+            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+            
+        extension = image_path.split('.')[-1].lower()
+        if extension == 'jpg': extension = 'jpeg'
+        mime_type = f"image/{extension}"
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Describe this image in detail. Focus on text, objects, and overall context. Be concise but thorough."},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{mime_type};base64,{base64_image}"
+                        }
+                    }
+                ]
+            }
+        ]
+
+        payload = {
+            "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+            "messages": messages,
+            "max_tokens": 512
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"{self.base_url}/chat/completions",
+                headers=headers,
+                json=payload
+            ) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"Groq Vision error: {response.status} - {error_text}")
+
+                result = await response.json()
+                return result['choices'][0]['message']['content']
 
     async def create_embedding(self, text: str) -> List[float]:
         """Create embeddings for text (if needed for custom implementations)"""

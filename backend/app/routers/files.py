@@ -21,6 +21,7 @@ from app.services.file_service import (
 from app.models.file import FileResponse, FolderCreate
 from app.core.document_processor import get_document_processor
 from app.core.video_processor import get_video_processor
+from app.core.image_processor import get_image_processor
 
 
 router = APIRouter()
@@ -103,6 +104,9 @@ async def upload_file(
     elif file_type == "video":
         vid_processor = get_video_processor()
         background_tasks.add_task(vid_processor.process_video, file_path, file_record.id, metadata)
+    elif file_type == "image":
+        img_processor = get_image_processor()
+        background_tasks.add_task(img_processor.process_image, file_path, file_record.id, metadata)
 
 
     return FileResponse(

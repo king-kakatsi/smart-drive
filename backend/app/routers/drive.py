@@ -12,6 +12,7 @@ from app.services.google_token_service import get_valid_access_token_for_user
 from app.services.file_service import save_file_metadata
 from app.core.document_processor import get_document_processor
 from app.core.video_processor import get_video_processor
+from app.core.image_processor import get_image_processor
 from app.config import settings
 
 
@@ -170,6 +171,9 @@ async def upload_file_to_drive(
         elif file_type == "video":
             vid_processor = get_video_processor()
             background_tasks.add_task(vid_processor.process_video, local_path, file_record.id, index_metadata)
+        elif file_type == "image":
+            img_processor = get_image_processor()
+            background_tasks.add_task(img_processor.process_image, local_path, file_record.id, index_metadata)
 
         return JSONResponse({
             "id": drive_file['id'],
