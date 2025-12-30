@@ -157,8 +157,13 @@ const handleOpenInTab = async (file) => {
   }
 }
 
-// Folder navigation state
-const currentFiles = computed(() => filesStore.folderContents)
+// Folder navigation state - switch to global filtered files when searching
+const currentFiles = computed(() => {
+  if (filesStore.searchQuery) {
+    return filesStore.filteredFiles
+  }
+  return filesStore.folderContents
+})
 const currentPath = computed(() => filesStore.currentFolderPath)
 const folderHistory = computed(() => filesStore.folderHistory)
 const isNavigating = computed(() => filesStore.isNavigating)
@@ -228,23 +233,17 @@ onMounted(async () => {
     <!-- Breadcrumb Navigation -->
     <div class="mt-4 mb-4 flex items-center justify-between px-4 lg:px-8">
       <div class="flex items-center gap-2 text-sm">
-        <button
-          @click="handleBreadcrumbClick('/')"
-          class="hover:text-primary transition-colors"
-          :class="{ 'text-primary font-medium': currentPath === '/' }"
-        >
+        <button @click="handleBreadcrumbClick('/')" class="hover:text-primary transition-colors"
+          :class="{ 'text-primary font-medium': currentPath === '/' }">
           Home
         </button>
 
         <template v-for="(segment, index) in pathSegments" :key="segment">
           <span class="text-muted-foreground">/</span>
-          <button
-            @click="handleBreadcrumbClick(getPathUpTo(index))"
-            class="hover:text-primary transition-colors"
+          <button @click="handleBreadcrumbClick(getPathUpTo(index))" class="hover:text-primary transition-colors"
             :class="{
               'text-primary font-medium': getPathUpTo(index) === currentPath
-            }"
-          >
+            }">
             {{ segment }}
           </button>
         </template>
@@ -252,29 +251,20 @@ onMounted(async () => {
 
       <!-- Navigation Buttons -->
       <div class="flex items-center gap-2">
-        <button
-          v-if="folderHistory.length > 1"
-          @click="filesStore.navigateUp()"
-          class="px-3 py-1.5 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors"
-        >
+        <button v-if="folderHistory.length > 1" @click="filesStore.navigateUp()"
+          class="px-3 py-1.5 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors">
           Back
         </button>
       </div>
     </div>
 
     <!-- Folder Contents -->
-    <FileExplorer
-      :files="currentFiles"
-      :title="pathSegments.length ? pathSegments[pathSegments.length - 1] : 'All Files'"
-      empty-message="This folder is empty"
-      empty-description="Upload files or create subfolders to get started."
-      @open-chat="handleOpenChat"
-      @show-upload="isUploadOpen = true"
-      @preview-file="handlePreviewFile"
-      @open-folder="handleOpenFolder"
-      @open-file="handleOpenFile"
-      @open-in-tab="handleOpenInTab"
-    />
+    <FileExplorer :files="currentFiles"
+      :title="filesStore.searchQuery ? 'Search Results' : (pathSegments.length ? pathSegments[pathSegments.length - 1] : 'All Files')"
+      :empty-message="filesStore.searchQuery ? 'No search results found' : 'This folder is empty'"
+      :empty-description="filesStore.searchQuery ? 'Try a different keyword.' : 'Upload files or create subfolders to get started.'"
+      @open-chat="handleOpenChat" @show-upload="isUploadOpen = true" @preview-file="handlePreviewFile"
+      @open-folder="handleOpenFolder" @open-file="handleOpenFile" @open-in-tab="handleOpenInTab" />
 
     <!-- Modals -->
     <UploadModal :is-open="isUploadOpen" @close="isUploadOpen = false" />

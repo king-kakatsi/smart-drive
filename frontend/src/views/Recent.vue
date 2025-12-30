@@ -18,8 +18,13 @@ const isUploadOpen = ref(false)
 const isPreviewOpen = ref(false)
 const selectedFile = ref(null)
 
-// Use store getter for recent files
-const recentFiles = computed(() => filesStore.recentFiles)
+// Filter recent files by search query
+const recentFiles = computed(() => {
+  const query = filesStore.searchQuery.toLowerCase()
+  return filesStore.recentFiles.filter(file =>
+    (file.name || file.original_filename || '').toLowerCase().includes(query)
+  )
+})
 
 const handlePreviewFile = (file) => {
   selectedFile.value = file
@@ -62,30 +67,20 @@ const handleToggleStar = async (file) => {
       </div>
 
       <!-- Empty State -->
-      <EmptyState
-        v-else-if="recentFiles.length === 0"
-        :icon="Clock"
-        title="No recent files"
-        description="Files you accessed in the last 7 days will appear here"
-        action-text="Upload New File"
-        @action="isUploadOpen = true"
-      />
+      <EmptyState v-else-if="recentFiles.length === 0" :icon="Clock" title="No recent files"
+        description="Files you accessed in the last 7 days will appear here" action-text="Upload New File"
+        @action="isUploadOpen = true" />
 
       <!-- Files Display -->
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        <FileCard
-          v-for="file in recentFiles"
-          :key="file.id"
-          :file="file"
-          @preview="handlePreviewFile"
-          @open-chat="handleOpenChat"
-          @toggle-star="handleToggleStar"
-        />
+        <FileCard v-for="file in recentFiles" :key="file.id" :file="file" @preview="handlePreviewFile"
+          @open-chat="handleOpenChat" @toggle-star="handleToggleStar" />
       </div>
     </div>
 
     <!-- Modals -->
     <UploadModal :is-open="isUploadOpen" @close="isUploadOpen = false" />
-    <FilePreviewModal :is-open="isPreviewOpen" :file="selectedFile" @close="isPreviewOpen = false" @open-chat="handleOpenChat" />
+    <FilePreviewModal :is-open="isPreviewOpen" :file="selectedFile" @close="isPreviewOpen = false"
+      @open-chat="handleOpenChat" />
   </div>
 </template>

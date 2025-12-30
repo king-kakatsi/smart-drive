@@ -90,26 +90,16 @@ const isActive = (path) => route.path === path
     </div>
 
     <!-- New File Button -->
-    <div class="px-4 mb-6">
-      <BaseButton class="w-full justify-start gap-2 h-11 shadow-md">
-        <Plus class="w-5 h-5" />
-        <span>New Upload</span>
-      </BaseButton>
-    </div>
+
 
     <!-- Navigation -->
     <nav class="flex-1 px-2 space-y-1">
-      <router-link
-        v-for="item in navItems"
-        :key="item.name"
-        :to="item.path"
-        :class="cn(
-          'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-          isActive(item.path) 
-            ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
-            : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
-        )"
-      >
+      <router-link v-for="item in navItems" :key="item.name" :to="item.path" :class="cn(
+        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+        isActive(item.path)
+          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+          : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+      )">
         <component :is="item.icon" class="w-4 h-4" />
         <span>{{ item.name }}</span>
       </router-link>
@@ -129,9 +119,9 @@ const isActive = (path) => route.path === path
       <!-- User Profile -->
       <div
         class="flex items-center gap-3 p-3 rounded-lg hover:bg-sidebar-accent transition-colors cursor-pointer group relative"
-        title="User Profile"
-      >
-        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-secondary to-accent flex items-center justify-center text-white font-medium shadow-inner group-hover:scale-105 transition-transform">
+        title="User Profile">
+        <div
+          class="w-10 h-10 rounded-full bg-gradient-to-br from-secondary to-accent flex items-center justify-center text-white font-medium shadow-inner group-hover:scale-105 transition-transform">
           {{ userInitials }}
         </div>
         <div class="flex-1 min-w-0">
@@ -141,12 +131,11 @@ const isActive = (path) => route.path === path
       </div>
 
       <!-- Logout Button -->
-      <button
-        @click="handleLogout"
+      <button @click="handleLogout"
         class="flex items-center gap-3 p-3 rounded-lg hover:bg-sidebar-accent transition-colors cursor-pointer group relative w-full text-left"
-        title="Logout"
-      >
-        <div class="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white shadow-inner group-hover:scale-105 transition-transform">
+        title="Logout">
+        <div
+          class="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white shadow-inner group-hover:scale-105 transition-transform">
           <LogOut class="w-4 h-4" />
         </div>
         <div class="flex-1 min-w-0">

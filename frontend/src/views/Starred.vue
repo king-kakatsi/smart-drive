@@ -18,8 +18,13 @@ const isUploadOpen = ref(false)
 const isPreviewOpen = ref(false)
 const selectedFile = ref(null)
 
-// Use store getter for starred files
-const starredFiles = computed(() => filesStore.starredFiles)
+// Filter starred files by search query
+const starredFiles = computed(() => {
+  const query = filesStore.searchQuery.toLowerCase()
+  return filesStore.starredFiles.filter(file =>
+    (file.name || file.original_filename || '').toLowerCase().includes(query)
+  )
+})
 
 const handlePreviewFile = (file) => {
   selectedFile.value = file
@@ -62,30 +67,20 @@ const handleToggleStar = async (file) => {
       </div>
 
       <!-- Empty State -->
-      <EmptyState
-        v-else-if="starredFiles.length === 0"
-        :icon="Star"
-        title="No starred files"
-        description="Star important files to find them quickly here"
-        action-text="Browse Files"
-        @action="$router.push('/files')"
-      />
+      <EmptyState v-else-if="starredFiles.length === 0" :icon="Star" title="No starred files"
+        description="Star important files to find them quickly here" action-text="Browse Files"
+        @action="$router.push('/files')" />
 
       <!-- Files Display -->
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        <FileCard
-          v-for="file in starredFiles"
-          :key="file.id"
-          :file="file"
-          @preview="handlePreviewFile"
-          @open-chat="handleOpenChat"
-          @toggle-star="handleToggleStar"
-        />
+        <FileCard v-for="file in starredFiles" :key="file.id" :file="file" @preview="handlePreviewFile"
+          @open-chat="handleOpenChat" @toggle-star="handleToggleStar" />
       </div>
     </div>
 
     <!-- Modals -->
     <UploadModal :is-open="isUploadOpen" @close="isUploadOpen = false" />
-    <FilePreviewModal :is-open="isPreviewOpen" :file="selectedFile" @close="isPreviewOpen = false" @open-chat="handleOpenChat" />
+    <FilePreviewModal :is-open="isPreviewOpen" :file="selectedFile" @close="isPreviewOpen = false"
+      @open-chat="handleOpenChat" />
   </div>
 </template>

@@ -44,16 +44,16 @@ const isFileStarred = computed(() => {
 const displayName = computed(() => {
     // Handle multiple possible field names for filename from different sources
     return props.file.name ||
-           props.file.original_filename ||
-           props.file.filename ||
-           props.file.title ||
-           'Unnamed File'
+        props.file.original_filename ||
+        props.file.filename ||
+        props.file.title ||
+        'Unnamed File'
 })
 
 const isFolder = computed(() => {
     return props.file.mimeType === 'application/vnd.google-apps.folder' ||
-           props.file.type === 'folder' ||
-           props.file.file_type === 'folder'
+        props.file.type === 'folder' ||
+        props.file.file_type === 'folder'
 })
 
 
@@ -144,14 +144,14 @@ const getIconColor = (file) => {
         <template v-if="viewMode === 'grid'">
             <div
                 class="aspect-video mb-4 rounded-lg overflow-hidden bg-muted/30 flex items-center justify-center relative">
-                <component :is="getFileIcon(file)"
-                    :class="cn('w-12 h-12', getIconColor(file).split(' ')[0])" />
+                <component :is="getFileIcon(file)" :class="cn('w-12 h-12', getIconColor(file).split(' ')[0])" />
 
                 <!-- Hover Actions Overlay (only for files, not folders) -->
                 <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0"
                     enter-to-class="opacity-100" leave-active-class="transition duration-150 ease-in"
                     leave-from-class="opacity-100" leave-to-class="opacity-0">
-                    <div v-if="isHovered && !isFolder" class="absolute inset-0 bg-black/40 flex items-center justify-center gap-2">
+                    <div v-if="isHovered && !isFolder"
+                        class="absolute inset-0 bg-black/40 flex items-center justify-center gap-2">
                         <button class="p-2 bg-white rounded-lg hover:scale-110 transition-transform" title="Preview"
                             @click.stop="emit('preview', file)">
                             <Eye class="w-4 h-4 text-gray-900" />
@@ -160,15 +160,16 @@ const getIconColor = (file) => {
                             @click.stop="emit('open-chat', file)">
                             <MessageSquare class="w-4 h-4 text-white" />
                         </button>
-                        <button class="p-2 bg-green-500 rounded-lg hover:scale-110 transition-transform" title="Open in New Tab"
-                            @click.stop="emit('open-in-tab', file)">
+                        <button class="p-2 bg-green-500 rounded-lg hover:scale-110 transition-transform"
+                            title="Open in New Tab" @click.stop="emit('open-in-tab', file)">
                             <ExternalLink class="w-4 h-4 text-white" />
                         </button>
                     </div>
                 </Transition>
 
                 <!-- Star button (only for files, not folders) -->
-                <button v-if="!isFolder" class="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition-colors"
+                <button v-if="!isFolder"
+                    class="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition-colors"
                     @click.stop="emit('toggle-star', file)">
                     <Star
                         :class="cn('w-3.5 h-3.5', isFileStarred ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400')" />
@@ -185,19 +186,19 @@ const getIconColor = (file) => {
                     </div>
                 </div>
 
-                <Dropdown v-if="!isFolder" class="shrink-0 bg-gray-100">
+                <!-- <Dropdown v-if="!isFolder" class="shrink-0 bg-gray-100">
                     <template #trigger>
                         <button class="p-1 hover:bg-muted rounded transition-colors">
                             <MoreVertical class="w-4 h-4 text-muted-foreground" />
                         </button>
                     </template>
-                    <DropdownItem @click.stop="emit('download', file)">
-                        <Download class="w-4 h-4 mr-2" /> Download
-                    </DropdownItem>
-                    <DropdownItem class="text-destructive" @click.stop="emit('delete', file)">
-                        <Trash2 class="w-4 h-4 mr-2" /> Delete
-                    </DropdownItem>
-                </Dropdown>
+<DropdownItem @click.stop="emit('download', file)">
+    <Download class="w-4 h-4 mr-2" /> Download
+</DropdownItem>
+<DropdownItem class="text-destructive" @click.stop="emit('delete', file)">
+    <Trash2 class="w-4 h-4 mr-2" /> Delete
+</DropdownItem>
+</Dropdown> -->
             </div>
         </template>
 
@@ -209,7 +210,8 @@ const getIconColor = (file) => {
 
             <div class="flex-1 min-w-0">
                 <h3 class="text-sm font-medium truncate">{{ displayName }}</h3>
-                <p class="text-[10px] text-muted-foreground">{{ (file.type || file.mimeType?.split('/').pop() || 'FILE').toUpperCase() }} • {{ file.size }}</p>
+                <p class="text-[10px] text-muted-foreground">{{ (file.type || file.mimeType?.split('/').pop() ||
+                    'FILE').toUpperCase() }} • {{ file.size }}</p>
             </div>
 
             <div class="hidden md:block text-xs text-muted-foreground px-4">
@@ -227,7 +229,8 @@ const getIconColor = (file) => {
                     @click.stop="emit('open-chat', file)">
                     <MessageSquare class="w-4 h-4" />
                 </button>
-                <button class="p-2 hover:bg-green-500/10 rounded-lg transition-colors text-green-600 hover:text-green-700"
+                <button
+                    class="p-2 hover:bg-green-500/10 rounded-lg transition-colors text-green-600 hover:text-green-700"
                     @click.stop="emit('open-in-tab', file)">
                     <ExternalLink class="w-4 h-4" />
                 </button>
