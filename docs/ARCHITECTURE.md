@@ -6,45 +6,11 @@ Complete guide to Smart-Drive's architecture, data flow, and design patterns.
 
 ### High-Level Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Smart-Drive Platform                      │
-│                                                             │
-│  ┌─────────────────┐    WebSocket     ┌─────────────────┐   │
-│  │   Vue 3 UI      │◄────────────────►│  FastAPI Backend │   │
-│  │  (Frontend)     │    HTTP/REST     │   (Backend)      │   │
-│  └─────────────────┘                  └─────────────────┘   │
-│           │                                   │              │
-│           │                                   │              │
-│           ▼                                   ▼              │
-│  ┌─────────────────┐                  ┌─────────────────┐   │
-│  │ Local Storage   │                  │ Google Drive API │   │
-│  │ (IndexedDB)     │                  │ Integration      │   │
-│  └─────────────────┘                  └─────────────────┘   │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │                  AI Processing Layer                     │ │
-│  │                                                         │ │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │ │
-│  │  │ Document    │  │   Video     │  │   Vector    │     │ │
-│  │  │ Processing  │  │ Processing  │  │   Search    │     │ │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘     │ │
-│  └─────────────────────────────────────────────────────────┘ │
-│           │                                   │              │
-│           ▼                                   ▼              │
-│  ┌─────────────────┐                  ┌─────────────────┐   │
-│  │   SQLite DB     │◄────────────────►│   ChromaDB      │   │
-│  │ (Metadata)      │   Embeddings     │ (Vectors)       │   │
-│  └─────────────────┘   & Search       └─────────────────┘   │
-│           │                                   │              │
-│           ▼                                   ▼              │
-│  ┌─────────────────┐                  ┌─────────────────┐   │
-│  │ File System     │                  │   External APIs  │   │
-│  │ (Local Files)   │                  │ (Groq, Whisper)  │   │
-│  └─────────────────┘                  └─────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
+![Smart-Drive System Architecture](./smart-drive-general-architecture.svg)
 
+### System Sequence Diagram
+
+![Smart-Drive System Sequence](./smart-drive-sequence-diagram.svg)
 ## Project Structure
 
 ### Complete Directory Tree
@@ -193,81 +159,11 @@ main.py (Entry Point)
 
 ### File Upload and Processing Flow
 
-```
-1. User Upload
-       ↓
-2. Frontend Validation
-       ↓
-3. API Upload Endpoint (/files/upload)
-       ↓
-4. File Storage (local filesystem)
-       ↓
-5. Metadata Database (SQLite)
-       ↓
-6. Document Processing
-   ├── Text Extraction (PDF/DOCX/TXT)
-   │       ↓
-   │   Text Chunking (overlap strategy)
-   │       ↓
-   │   Embedding Generation
-   │       ↓
-   │   ChromaDB Storage
-   │
-   └── Video Processing (MP4/AVI/WEBM)
-           ↓
-       Whisper Transcription
-           ↓
-       Timestamp Preservation
-           ↓
-       Text Chunking
-           ↓
-       Embedding Generation
-           ↓
-       ChromaDB Storage
-```
+![File Upload Process Flow](./smart-drive-upload-process-flow.svg)
 
 ### AI Chat Conversation Flow
 
-```
-1. User Question
-       ↓
-2. Frontend WebSocket (/ws/chat)
-       ↓
-3. Message Validation
-       ↓
-4. Context Retrieval
-   ├── File Selection (user specified or auto)
-   │       ↓
-   │   Vector Similarity Search (ChromaDB)
-   │       ↓
-   │   Relevant Chunks Selection
-   │
-   └── Conversation History
-           ↓
-       Recent Messages Retrieval
-           ↓
-       Context Window Management
-       ↓
-5. Prompt Construction
-   ├── System Instructions
-   │   └── Content-based responses only
-   ├── Retrieved Context
-   │   └── Source citations required
-   └── User Question
-       ↓
-6. Groq API Call (streaming)
-       ↓
-7. Response Processing
-   ├── Content Filtering
-   │   └── Remove hallucinations
-   ├── Source Attribution
-   │   └── File references
-   └── Citation Generation
-       ↓
-8. WebSocket Streaming Response
-       ↓
-9. Frontend Display
-```
+![AI Chat Flow](./smart-drive-chat-flow.svg)
 
 ### Google Drive Synchronization Flow
 

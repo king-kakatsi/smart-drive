@@ -169,13 +169,9 @@ AI: "Based on 'Company A Proposal.pdf' and 'Company B Contract.docx':
 
 Smart-Drive follows a modern microservices-inspired architecture with clear separation of concerns:
 
-### System Representation
+### System Architecture
 
-![Backend Architecture](./docs/smart-drive-backend-representation.png)
-*Detailed Backend Flow and Processing Logic*
-
-![Frontend Architecture](./docs/smart-drive-frontend-representation.png)
-*Detailed Frontend Component and State Flow*
+![Smart-Drive System Architecture](./docs/smart-drive-general-architecture.svg)
 
 ### High-Level Flow
 

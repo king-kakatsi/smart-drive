@@ -6,21 +6,12 @@ A detailed overview of the technologies, structure, and design principles of the
 The frontend is a modern, reactive single-page application (SPA) built with **Vue 3** and **Vite**. It is designed for speed, visual excellence, and a seamless user experience, utilizing a component-based architecture and centralized state management.
 
 ## High-Level Structure
-```mermaid
-graph TD
-    Entry["Entry Point (src/main.js)"] --> App["Root Component (src/App.vue)"]
-    App --> Router["Vue Router (src/router/)"]
-    App --> Stores["Pinia Stores (src/stores/)"]
-    
-    Router --> Views["Views (src/views/)"]
-    Views --> Components["Components (src/components/)"]
-    
-    Components --> Shared["Common Components"]
-    Components --> Domain["Domain Components (Files, Chat, Auth)"]
-    
-    Stores --> Services["API Services (src/services/api/)"]
-    Services --> ApiClient["Base API Client"]
-```
+![Smart-Drive Frontend Architecture](./smart-drive-frontend-representation.png)
+*Detailed Frontend Component and State Flow*
+
+### System Sequence Diagram
+
+![Smart-Drive System Sequence](./smart-drive-sequence-diagram.svg)
 
 ## Technology Stack
 - **Framework**: **Vue 3 (Composition API)** for a reactive and maintainable UI.
