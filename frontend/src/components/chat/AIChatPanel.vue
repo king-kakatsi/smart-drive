@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { X, Sparkles, Bot } from 'lucide-vue-next'
 import { cn } from '@/utils/cn'
@@ -18,7 +18,16 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const chatStore = useChatStore()
-const { messages, isTyping, error } = storeToRefs(chatStore)
+const { messages, isTyping, error, currentContext } = storeToRefs(chatStore)
+
+const displayFile = computed(() => {
+    const file = props.selectedFile || currentContext.value
+    if (!file) return null
+    return {
+        ...file,
+        name: file.name || file.original_filename || file.filename || file.title || 'Unnamed File'
+    }
+})
 
 const scrollRef = ref(null)
 
@@ -72,25 +81,27 @@ onUnmounted(() => {
                     <Sparkles class="w-5 h-5" />
                 </div>
                 <div>
-                    <h3 class="text-sm font-semibold">AI Assistant</h3>
+                    <h3 class="text-sm font-semibold truncate max-w-[200px]">
+                        {{ displayFile?.name || 'AI Assistant' }}
+                    </h3>
                     <p class="text-[10px] text-muted-foreground flex items-center gap-1">
                         <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                         Online & Ready
                     </p>
                 </div>
             </div>
-            <BaseButton variant="ghost" size="icon" @click="emit('close')">
+            <BaseButton variant="ghost" size="icon" @click="emit('close'); chatStore.clearHistory()">
                 <X class="w-4 h-4" />
             </BaseButton>
         </div>
 
-        <!-- Selected File Context -->
-        <div v-if="selectedFile" class="p-3 bg-primary/5 border-b border-primary/10 flex items-center gap-3">
+        <!-- Selected File Context Info -->
+        <div v-if="displayFile" class="p-3 bg-primary/5 border-b border-primary/10 flex items-center gap-3">
             <div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center text-primary">
                 <Bot class="w-4 h-4" />
             </div>
             <div class="flex-1 min-w-0">
-                <p class="text-xs font-medium truncate">Analyzing: {{ selectedFile.name }}</p>
+                <p class="text-xs font-medium truncate">Analyzing: {{ displayFile.name }}</p>
                 <p class="text-[10px] text-muted-foreground">Context active</p>
             </div>
         </div>
