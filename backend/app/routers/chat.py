@@ -57,13 +57,29 @@ async def chat_websocket(
             search_where = None
             if file_ids:
                 try:
-                    # Filter by the local database file IDs
-                    ids_to_filter = [int(fid) for fid in file_ids if str(fid).isdigit()]
-                    if ids_to_filter:
-                        if len(ids_to_filter) == 1:
-                            search_where = {"file_id": ids_to_filter[0]}
+                    # Filter by the local database file IDs (integers) or Drive IDs (strings)
+                    # We create an $or condition if multiple IDs of different types are present
+                    int_ids = [int(fid) for fid in file_ids if str(fid).isdigit()]
+                    str_ids = [str(fid) for fid in file_ids if not str(fid).isdigit()]
+                    
+                    filters = []
+                    if int_ids:
+                        if len(int_ids) == 1:
+                            filters.append({"file_id": int_ids[0]})
                         else:
-                            search_where = {"file_id": {"$in": ids_to_filter}}
+                            filters.append({"file_id": {"$in": int_ids}})
+                    
+                    if str_ids:
+                        if len(str_ids) == 1:
+                            filters.append({"drive_file_id": str_ids[0]})
+                        else:
+                            filters.append({"drive_file_id": {"$in": str_ids}})
+                    
+                    if len(filters) == 1:
+                        search_where = filters[0]
+                    elif len(filters) > 1:
+                        search_where = {"$or": filters}
+                        
                 except Exception as e:
                     print(f"Error building search filter: {str(e)}")
 
@@ -79,9 +95,10 @@ async def chat_websocket(
 
             if search_results.get("documents"):
                 for i, doc in enumerate(search_results["documents"][0]):
-                    context += f"\nDocument {i+1}: {doc[:1000]}..."  # Limit context length
-                    if search_results.get("metadatas") and search_results["metadatas"][0]:
-                        sources.append(search_results["metadatas"][0][i])
+                    metadata = search_results["metadatas"][0][i] if (search_results.get("metadatas") and search_results["metadatas"][0]) else {}
+                    filename = metadata.get("filename") or metadata.get("name") or f"Document {i+1}"
+                    context += f"\nSource: {filename}\nContent Snippet: {doc[:1000]}\n---\n"
+                    sources.append(metadata)
 
             # Build AI prompt
             system_prompt = f"""You are SmartDrive AI, an expert document assistant.
@@ -164,12 +181,26 @@ async def chat_message(
     search_where = None
     if request.file_ids:
         try:
-            ids_to_filter = [int(fid) for fid in request.file_ids if str(fid).isdigit()]
-            if ids_to_filter:
-                if len(ids_to_filter) == 1:
-                    search_where = {"file_id": ids_to_filter[0]}
+            int_ids = [int(fid) for fid in request.file_ids if str(fid).isdigit()]
+            str_ids = [str(fid) for fid in request.file_ids if not str(fid).isdigit()]
+            
+            filters = []
+            if int_ids:
+                if len(int_ids) == 1:
+                    filters.append({"file_id": int_ids[0]})
                 else:
-                    search_where = {"file_id": {"$in": ids_to_filter}}
+                    filters.append({"file_id": {"$in": int_ids}})
+            
+            if str_ids:
+                if len(str_ids) == 1:
+                    filters.append({"drive_file_id": str_ids[0]})
+                else:
+                    filters.append({"drive_file_id": {"$in": str_ids}})
+            
+            if len(filters) == 1:
+                search_where = filters[0]
+            elif len(filters) > 1:
+                search_where = {"$or": filters}
         except:
             pass
 
@@ -181,9 +212,10 @@ async def chat_message(
 
     if search_results.get("documents"):
         for i, doc in enumerate(search_results["documents"][0]):
-            context += f"\nDocument {i+1}: {doc[:1000]}..."
-            if search_results.get("metadatas") and search_results["metadatas"][0]:
-                sources.append(search_results["metadatas"][0][i])
+            metadata = search_results["metadatas"][0][i] if (search_results.get("metadatas") and search_results["metadatas"][0]) else {}
+            filename = metadata.get("filename") or metadata.get("name") or f"Document {i+1}"
+            context += f"\nSource: {filename}\nContent Snippet: {doc[:1000]}\n---\n"
+            sources.append(metadata)
 
     # Get AI response
     ai_client = get_ai_client()

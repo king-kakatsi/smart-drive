@@ -88,7 +88,8 @@ const handleOpenFile = (file) => {
       window.open(file.webViewLink, '_blank')
     } else if (file.id && !isNaN(file.id)) {
       // For local files, use the backend download endpoint
-      const downloadUrl = `/api/v1/files/${file.id}/download`
+      const token = localStorage.getItem('access_token')
+      const downloadUrl = `/api/v1/files/${file.id}/download?token=${token}`
       window.open(downloadUrl, '_blank')
     } else {
       console.error('Cannot open file: invalid file data', file)
@@ -99,7 +100,8 @@ const handleOpenFile = (file) => {
 }
 
 const handleDelete = async (file) => {
-  if (confirm(`Are you sure you want to delete "${file.name}"?`)) {
+  const fileName = file.name || file.original_filename || file.filename || 'this file'
+  if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
     try {
       await filesStore.deleteFile(file.id)
       // Close the preview modal after successful deletion
@@ -147,7 +149,8 @@ const handleOpenInTab = async (file) => {
       window.open(file.webViewLink, '_blank')
     } else if (file.id && !isNaN(file.id)) {
       // Local file - use preview endpoint
-      const previewUrl = `/api/v1/files/${file.id}/preview`
+      const token = localStorage.getItem('access_token')
+      const previewUrl = `/api/v1/files/${file.id}/preview?token=${token}`
       window.open(previewUrl, '_blank')
     } else {
       console.error('Cannot open file in tab: invalid file data', file)
@@ -227,59 +230,24 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full">
+  <div class="h-full flex flex-col overflow-hidden">
     <!-- Loading Overlay -->
     <div v-if="isNavigating" class="absolute inset-0 bg-background/80 flex items-center justify-center z-50">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
     </div>
 
-    <!-- Breadcrumb & Navigation Bar -->
-    <div
-      class="sticky top-0 z-30 backdrop-blur-md bg-white/40 dark:bg-slate-900/40 border-b border-white/10 px-4 lg:px-8 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-1 overflow-x-auto no-scrollbar py-1">
-        <!-- Root / Home Link -->
-        <button @click="handleBreadcrumbClick('/')" :class="cn(
-          'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap',
-          currentPath === '/'
-            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-        )">
-          <Home class="w-3.5 h-3.5" />
-          <span>Home</span>
-        </button>
-
-        <!-- Segment Links -->
-        <template v-for="(segment, index) in pathSegments" :key="segment">
-          <ChevronRight class="w-4 h-4 text-muted-foreground/40 shrink-0" />
-          <button @click="handleBreadcrumbClick(getPathUpTo(index))" :class="cn(
-            'px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border border-transparent',
-            getPathUpTo(index) === currentPath
-              ? 'bg-white dark:bg-slate-800 text-primary shadow-sm border-primary/20'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-          )">
-            {{ segment }}
-          </button>
-        </template>
-      </div>
-
-      <!-- Navigation Actions -->
-      <div class="flex items-center gap-2 shrink-0 ml-4">
-        <button v-if="folderHistory.length > 1" @click="filesStore.navigateUp()"
-          class="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold bg-muted hover:bg-muted/80 rounded-full transition-all border border-border/50 hover:border-border">
-          <ArrowLeft class="w-3.5 h-3.5" />
-          <span>Back</span>
-        </button>
-      </div>
-    </div>
-
     <!-- Folder Contents -->
-    <FileExplorer :files="currentFiles"
-      :title="filesStore.searchQuery ? 'Search Results' : (pathSegments.length ? pathSegments[pathSegments.length - 1] : 'All Files')"
-      :empty-message="filesStore.searchQuery ? 'No search results found' : 'This folder is empty'"
-      :empty-description="filesStore.searchQuery ? 'Try a different keyword.' : 'Upload files or create subfolders to get started.'"
-      @open-chat="handleOpenChat" @show-upload="isUploadOpen = true" @preview-file="handlePreviewFile"
-      @open-folder="handleOpenFolder" @open-file="handleOpenFile" @open-in-tab="handleOpenInTab"
-      @toggle-star="handleToggleStar" />
+    <div class="flex-1 overflow-hidden">
+      <FileExplorer :files="currentFiles"
+        :title="filesStore.searchQuery ? 'Search Results' : (pathSegments.length ? pathSegments[pathSegments.length - 1] : 'All Files')"
+        :current-path="currentPath" :path-segments="pathSegments"
+        :empty-message="filesStore.searchQuery ? 'No search results found' : 'This folder is empty'"
+        :empty-description="filesStore.searchQuery ? 'Try a different keyword.' : 'Upload files or create subfolders to get started.'"
+        @open-chat="handleOpenChat" @show-upload="isUploadOpen = true" @preview-file="handlePreviewFile"
+        @open-folder="handleOpenFolder" @open-file="handleOpenFile" @open-in-tab="handleOpenInTab"
+        @toggle-star="handleToggleStar" @breadcrumb-click="handleBreadcrumbClick"
+        @navigate-up="filesStore.navigateUp()" />
+    </div>
 
     <!-- Modals -->
     <UploadModal :is-open="isUploadOpen" @close="isUploadOpen = false" />

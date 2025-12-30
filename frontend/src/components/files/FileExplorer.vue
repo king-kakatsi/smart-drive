@@ -4,7 +4,10 @@ import {
     LayoutGrid,
     List,
     Upload,
-    Plus
+    Plus,
+    Home,
+    ChevronRight,
+    ArrowLeft
 } from 'lucide-vue-next'
 import { cn } from '@/utils/cn'
 import { useFiles } from '@/composables/useFiles'
@@ -19,6 +22,14 @@ const props = defineProps({
     title: {
         type: String,
         default: 'All Files'
+    },
+    pathSegments: {
+        type: Array,
+        default: () => []
+    },
+    currentPath: {
+        type: String,
+        default: '/'
     },
     emptyMessage: {
         type: String,
@@ -40,7 +51,9 @@ const emit = defineEmits([
     'toggle-star',
     'download',
     'share',
-    'delete'
+    'delete',
+    'breadcrumb-click',
+    'navigate-up'
 ])
 
 const { viewMode, setViewMode } = useFiles()
@@ -52,11 +65,35 @@ const displayFiles = computed(() => props.files)
         <!-- Persistent Glass Header / Toolbar -->
         <div
             class="sticky top-0 z-40 backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border-b border-white/20 dark:border-white/5 p-4 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
-            <div class="flex items-center gap-3">
-                <h2 class="text-xl font-extrabold tracking-tight text-foreground/90">{{ title }}</h2>
-                <div v-if="files.length > 0"
-                    class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
-                    {{ files.length }} items
+            <div class="flex flex-col gap-1.5 flex-1 min-w-0">
+                <!-- Breadcrumbs row -->
+                <nav v-if="pathSegments.length > 0" class="flex items-center gap-1 text-[10px] uppercase tracking-widest font-black text-muted-foreground/60 mb-0.5">
+                    <button @click="$emit('breadcrumb-click', '/')" class="hover:text-primary transition-colors">Home</button>
+                    <template v-for="(segment, index) in pathSegments" :key="segment">
+                        <ChevronRight class="w-3 h-3 opacity-40 shrink-0" />
+                        <button 
+                            @click="$emit('breadcrumb-click', '/' + pathSegments.slice(0, index + 1).join('/'))"
+                            :class="cn(
+                                'transition-colors',
+                                index === pathSegments.length - 1 ? 'text-primary' : 'hover:text-primary'
+                            )"
+                        >
+                            {{ segment }}
+                        </button>
+                    </template>
+                </nav>
+
+                <div class="flex items-center gap-3">
+                    <button v-if="currentPath !== '/'" @click="$emit('navigate-up')"
+                        class="p-1.5 rounded-lg bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-all shrink-0 md:hidden"
+                        title="Go back">
+                        <ArrowLeft class="w-4 h-4" />
+                    </button>
+                    <h2 class="text-xl md:text-2xl font-black tracking-tight text-foreground/90 truncate capitalize">{{ title }}</h2>
+                    <div v-if="files.length > 0"
+                        class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider shrink-0">
+                        {{ files.length }} items
+                    </div>
                 </div>
             </div>
 

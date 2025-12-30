@@ -33,7 +33,45 @@ export const useFilesStore = defineStore('files', {
      * Combine local and drive files
      */
     allFiles: (state) => {
-      return [...state.localFiles, ...state.driveFiles]
+      const fileMap = new Map()
+      
+      // 1. Add all local records first
+      state.localFiles.forEach(localFile => {
+        // Use drive_file_id as key if it exists, otherwise use local ID
+        const key = localFile.drive_file_id || `local_${localFile.id}`
+        fileMap.set(key, { 
+          ...localFile, 
+          name: localFile.original_filename || localFile.filename || localFile.name,
+          isLocal: true 
+        })
+      })
+      
+      // 2. Merge in Drive records
+      state.driveFiles.forEach(driveFile => {
+        const key = driveFile.id
+        if (fileMap.has(key)) {
+          const localRecord = fileMap.get(key)
+          fileMap.set(key, {
+            ...localRecord, // Local intelligence (processed, file_type, path)
+            ...driveFile,   // Priority: Drive richness (Name, webViewLink, thumbnailLink, size)
+            id: driveFile.id, // Ensure primary ID is the Drive string ID
+            local_id: localRecord.id, // Keep numeric ID for backend operations
+            drive_file_id: driveFile.id,
+            isSynced: true,
+            isLocal: true
+          })
+        } else {
+          // Drive file not in local database yet
+          fileMap.set(key, { 
+            ...driveFile, 
+            id: driveFile.id, 
+            drive_file_id: driveFile.id,
+            isDriveOnly: true 
+          })
+        }
+      })
+      
+      return Array.from(fileMap.values())
     },
 
     /**
@@ -90,6 +128,49 @@ export const useFilesStore = defineStore('files', {
   },
   
   actions: {
+    /**
+     * Helper: Merge and de-duplicate files from local and Drive sources
+     */
+    joinAndDeduplicate(localFiles, driveFiles) {
+      const fileMap = new Map()
+      
+      // 1. Add all local records
+      localFiles.forEach(localFile => {
+        const key = localFile.drive_file_id || `local_${localFile.id}`
+        fileMap.set(key, { 
+          ...localFile, 
+          name: localFile.original_filename || localFile.filename || localFile.name,
+          isLocal: true 
+        })
+      })
+      
+      // 2. Merge in Drive records
+      driveFiles.forEach(driveFile => {
+        const key = driveFile.id
+        if (fileMap.has(key)) {
+          const localRecord = fileMap.get(key)
+          fileMap.set(key, {
+            ...localRecord,
+            ...driveFile,
+            id: driveFile.id,
+            local_id: localRecord.id,
+            drive_file_id: driveFile.id,
+            isSynced: true,
+            isLocal: true
+          })
+        } else {
+          fileMap.set(key, { 
+            ...driveFile, 
+            id: driveFile.id, 
+            drive_file_id: driveFile.id,
+            isDriveOnly: true 
+          })
+        }
+      })
+      
+      return Array.from(fileMap.values())
+    },
+
     /**
      * Fetch all local files
      */
@@ -155,30 +236,35 @@ export const useFilesStore = defineStore('files', {
       try {
         // Find the file to determine if it's local or from Drive
         let file = this.localFiles.find(f => f.id === fileId)
-        let isDriveFile = false
-
+        
         if (!file) {
           file = this.driveFiles.find(f => f.id === fileId)
-          isDriveFile = true
         }
 
         if (!file) {
           throw new Error('File not found')
         }
 
-        // Delete using appropriate service
-        if (isDriveFile || file.webViewLink) {
-          // Google Drive file
-          await driveService.deleteDriveFile(fileId)
-          this.driveFiles = this.driveFiles.filter(f => f.id !== fileId)
+        // Update appropriate arrays
+        if (file.drive_file_id) {
+          // Google Drive file (synced or standalone)
+          await driveService.deleteDriveFile(file.drive_file_id)
+          this.driveFiles = this.driveFiles.filter(f => f.id !== file.drive_file_id)
+          this.localFiles = this.localFiles.filter(f => f.drive_file_id !== file.drive_file_id)
         } else {
-          // Local file
+          // Local only file
           await fileService.deleteFile(fileId)
           this.localFiles = this.localFiles.filter(f => f.id !== fileId)
         }
 
+        // Fix: Also filter folderContents to update the UI reactively
+        this.folderContents = this.folderContents.filter(f => f.id !== fileId && f.drive_file_id !== fileId)
+
         // Remove from selected files
         this.selectedFiles = this.selectedFiles.filter(id => id !== fileId)
+
+        // Refresh storage metrics after deletion
+        this.fetchStorageMetrics().catch(err => console.warn('Failed to refresh metrics:', err))
       } catch (error) {
         this.error = error.detail || 'Failed to delete file'
         throw error
@@ -337,9 +423,6 @@ export const useFilesStore = defineStore('files', {
         // Persist to localStorage
         this.saveStarredToLocalStorage()
 
-        // TODO: Call backend API when available
-        // await fileService.toggleStar(fileId)
-
       } catch (error) {
         // Revert optimistic update on error
         const index = this.starredFileIds.indexOf(fileId)
@@ -462,7 +545,7 @@ export const useFilesStore = defineStore('files', {
             fileService.listAllFiles(folderPath),
             this.fetchDriveFolderContents(folderPath)
           ])
-          this.folderContents = [...localFiles, ...driveFiles]
+          this.folderContents = this.joinAndDeduplicate(localFiles, driveFiles)
         }
       } catch (error) {
         this.error = error.message || 'Failed to fetch folder contents'
@@ -488,9 +571,6 @@ export const useFilesStore = defineStore('files', {
         return []
       }
 
-      // For Drive subfolders, we need to filter files by parent
-      // This is a simplified approach - in a real implementation,
-      // you might want to cache folder hierarchies
       try {
         const response = await driveService.listDriveFiles(1000, null, folderId)
         return response.files || []

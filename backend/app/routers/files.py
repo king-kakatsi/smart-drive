@@ -14,6 +14,7 @@ from app.config import settings
 from app.services.file_service import (
     save_file_metadata,
     get_user_files,
+    get_file_by_id,
     delete_file_record,
     create_folder,
     move_file

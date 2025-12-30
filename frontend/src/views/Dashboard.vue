@@ -99,7 +99,7 @@ const firstName = computed(() => {
             System Active
           </div>
           <h1 class="text-4xl lg:text-5xl font-black tracking-tight mb-4">
-            Welcome back, <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">{{
+            Welcome back, <span class="text-transparent bg-clip-text bg-secondary">{{
               firstName }}</span>!
           </h1>
           <p class="text-slate-400 text-lg max-w-xl font-medium leading-relaxed">

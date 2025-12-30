@@ -66,28 +66,23 @@ const getFileIcon = (file) => {
         return Folder
     }
 
-    const type = file.type || file.mimeType?.split('/').pop() || 'file'
-    switch (type.toLowerCase()) {
-        case 'pdf':
-        case 'doc':
-        case 'docx':
-        case 'txt':
-            return FileText
-        case 'mp4':
-        case 'mov':
-        case 'avi':
-            return Video
-        case 'mp3':
-        case 'wav':
-            return Music
-        case 'jpg':
-        case 'jpeg':
-        case 'png':
-        case 'gif':
-            return ImageIcon
-        default:
-            return File
-    }
+    // Unified type extraction
+    const rawType = file.file_type || file.type || ''
+    const mime = (file.mimeType || file.mime_type || '').split('/').pop() || ''
+    const extension = (file.original_filename || file.name || '').split('.').pop() || ''
+    
+    const type = (rawType || mime || extension || 'file').toLowerCase()
+
+    if (type.includes('pdf')) return FileText
+    if (['doc', 'docx', 'word', 'document'].some(t => type.includes(t))) return FileText
+    if (['txt', 'text', 'markdown', 'md'].some(t => type.includes(t))) return FileText
+    
+    if (['mp4', 'mov', 'avi', 'video'].some(t => type.includes(t))) return Video
+    if (['mp3', 'wav', 'audio'].some(t => type.includes(t))) return Music
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'image'].some(t => type.includes(t))) return ImageIcon
+    
+    return File
 }
 
 const handleCardClick = (event) => {
@@ -117,24 +112,36 @@ const getIconColor = (file) => {
         return 'text-[var(--file-folder)] bg-[var(--file-folder)]/10'
     }
 
-    const type = file.type || file.mimeType?.split('/').pop() || 'file'
-    switch (type.toLowerCase()) {
-        case 'pdf': return 'text-[var(--file-pdf)] bg-[var(--file-pdf)]/10'
-        case 'doc':
-        case 'docx': return 'text-[var(--file-word)] bg-[var(--file-word)]/10'
-        case 'mp4':
-        case 'mov':
-        case 'video': return 'text-[var(--file-video)] bg-[var(--file-video)]/10'
-        case 'mp3':
-        case 'wav':
-        case 'audio': return 'text-[var(--file-audio)] bg-[var(--file-audio)]/10'
-        case 'jpg':
-        case 'jpeg':
-        case 'png':
-        case 'gif':
-        case 'image': return 'text-[var(--file-image)] bg-[var(--file-image)]/10'
-        default: return 'text-primary bg-primary/10'
-    }
+    // Unified type extraction
+    const rawType = file.file_type || file.type || ''
+    const mime = (file.mimeType || file.mime_type || '').split('/').pop() || ''
+    const type = (rawType || mime || 'file').toLowerCase()
+
+    if (type.includes('pdf')) return 'text-[var(--file-pdf)] bg-[var(--file-pdf)]/10'
+    if (['doc', 'docx', 'word', 'document'].some(t => type.includes(t))) return 'text-[var(--file-word)] bg-[var(--file-word)]/10'
+    
+    if (['mp4', 'mov', 'video'].some(t => type.includes(t))) return 'text-[var(--file-video)] bg-[var(--file-video)]/10'
+    if (['mp3', 'wav', 'audio'].some(t => type.includes(t))) return 'text-[var(--file-audio)] bg-[var(--file-audio)]/10'
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'image'].some(t => type.includes(t))) return 'text-[var(--file-image)] bg-[var(--file-image)]/10'
+    
+    return 'text-primary bg-primary/10'
+}
+
+const formatSize = (bytes) => {
+    if (!bytes || isNaN(bytes)) return 'Size N/A'
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+    if (bytes === 0) return '0 B'
+    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)))
+    return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i]
+}
+
+const formatDate = (file) => {
+    const rawDate = file.modifiedTime || file.updatedAt || file.created_at || file.modified_at
+    if (!rawDate) return 'Unknown Date'
+    const date = new Date(rawDate)
+    if (isNaN(date.getTime())) return 'Invalid Date'
+    return date.toLocaleDateString()
 }
 </script>
 
@@ -179,9 +186,9 @@ const getIconColor = (file) => {
 
                 <div
                     class="flex items-center text-[10px] text-muted-foreground font-medium uppercase tracking-wider opacity-80">
-                    <span>{{ file.size || 'Size N/A' }}</span>
+                    <span>{{ formatSize(file.size || file.file_size) }}</span>
                     <span class="mx-1.5 text-muted-foreground/30">•</span>
-                    <span>{{ file.updatedAt || new Date(file.created_at).toLocaleDateString() }}</span>
+                    <span>{{ formatDate(file) }}</span>
                 </div>
             </div>
 
@@ -238,14 +245,14 @@ const getIconColor = (file) => {
                 </h3>
                 <div
                     class="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest opacity-60">
-                    <span>{{ (file.type || file.mimeType?.split('/').pop() || 'FILE') }}</span>
+                    <span>{{ (file.file_type || file.type || file.mimeType?.split('/').pop() || 'FILE') }}</span>
                     <span>•</span>
-                    <span>{{ file.size }}</span>
+                    <span>{{ formatSize(file.size || file.file_size) }}</span>
                 </div>
             </div>
 
             <div class="hidden md:block text-[11px] text-muted-foreground font-medium px-4">
-                {{ file.updatedAt || new Date(file.created_at).toLocaleDateString() }}
+                {{ formatDate(file) }}
             </div>
 
             <div
@@ -253,13 +260,18 @@ const getIconColor = (file) => {
                 <template v-if="!isFolder">
                     <button
                         class="p-2 hover:bg-primary/10 rounded-xl text-muted-foreground hover:text-primary transition-all"
-                        @click.stop="emit('preview', file)">
+                        @click.stop="emit('preview', file)" title="Preview">
                         <Eye class="w-4 h-4" />
                     </button>
                     <button
                         class="p-2 hover:bg-secondary/10 rounded-xl text-muted-foreground hover:text-secondary transition-all"
-                        @click.stop="emit('open-chat', file)">
+                        @click.stop="emit('open-chat', file)" title="AI Chat">
                         <MessageSquare class="w-4 h-4" />
+                    </button>
+                    <button
+                        class="p-2 hover:bg-green-500/10 rounded-xl text-muted-foreground hover:text-green-600 transition-all"
+                        @click.stop="emit('open-in-tab', file)" title="Open in New Tab">
+                        <ExternalLink class="w-4 h-4" />
                     </button>
                 </template>
 

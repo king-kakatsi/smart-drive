@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import {
     X,
     MessageSquare,
@@ -35,28 +36,23 @@ const getFileIcon = (file) => {
         return Folder
     }
 
-    const type = file.type || file.mimeType?.split('/').pop() || 'file'
-    switch (type.toLowerCase()) {
-        case 'pdf':
-        case 'doc':
-        case 'docx':
-        case 'txt':
-            return FileText
-        case 'mp4':
-        case 'mov':
-        case 'avi':
-            return Video
-        case 'mp3':
-        case 'wav':
-            return Music
-        case 'jpg':
-        case 'jpeg':
-        case 'png':
-        case 'gif':
-            return ImageIcon
-        default:
-            return File
-    }
+    // Unified type extraction
+    const rawType = file.file_type || file.type || ''
+    const mime = (file.mimeType || file.mime_type || '').split('/').pop() || ''
+    const extension = (file.original_filename || file.name || '').split('.').pop() || ''
+
+    const type = (rawType || mime || extension || 'file').toLowerCase()
+
+    if (type.includes('pdf')) return FileText
+    if (['doc', 'docx', 'word', 'document'].some(t => type.includes(t))) return FileText
+    if (['txt', 'text', 'markdown', 'md'].some(t => type.includes(t))) return FileText
+
+    if (['mp4', 'mov', 'avi', 'video'].some(t => type.includes(t))) return Video
+    if (['mp3', 'wav', 'audio'].some(t => type.includes(t))) return Music
+
+    if (['jpg', 'jpeg', 'png', 'gif', 'image'].some(t => type.includes(t))) return ImageIcon
+
+    return File
 }
 
 const getIconColor = (file) => {
@@ -67,19 +63,55 @@ const getIconColor = (file) => {
         return 'text-yellow-600'
     }
 
-    const type = file.type || file.mimeType?.split('/').pop() || 'file'
-    switch (type.toLowerCase()) {
-        case 'pdf': return 'text-red-500'
-        case 'doc':
-        case 'docx': return 'text-blue-500'
-        case 'mp4':
-        case 'mov': return 'text-purple-500'
-        case 'mp3': return 'text-pink-500'
-        case 'jpg':
-        case 'png': return 'text-orange-500'
-        default: return 'text-gray-500'
-    }
+    // Unified type extraction
+    const rawType = file.file_type || file.type || ''
+    const mime = (file.mimeType || file.mime_type || '').split('/').pop() || ''
+    const type = (rawType || mime || 'file').toLowerCase()
+
+    if (type.includes('pdf')) return 'text-red-500'
+    if (['doc', 'docx', 'word', 'document'].some(t => type.includes(t))) return 'text-blue-500'
+
+    if (['mp4', 'mov', 'video'].some(t => type.includes(t))) return 'text-purple-500'
+    if (['mp3', 'wav', 'audio'].some(t => type.includes(t))) return 'text-pink-500'
+
+    if (['jpg', 'jpeg', 'png', 'gif', 'image'].some(t => type.includes(t))) return 'text-orange-500'
+
+    return 'text-gray-500'
 }
+
+const previewUrl = computed(() => {
+    if (!props.file) return null
+
+    // 1. If it's a Drive file with a thumbnail, use it
+    if (props.file.thumbnailLink) {
+        // thumbnailLink is usually small, but we can try to get a larger one by removing =s220
+        return props.file.thumbnailLink.replace(/=s\d+$/, '=s1000')
+    }
+
+    // 2. If it's a local file or synced file with local copy, use our preview endpoint
+    const localId = props.file.local_id || (!isNaN(props.file.id) ? props.file.id : null)
+    if (localId) {
+        const token = localStorage.getItem('access_token')
+        return `/api/v1/files/${localId}/preview?token=${token}`
+    }
+
+    // 3. Fallback to webViewLink for Drive files if nothing else
+    if (props.file.webViewLink) {
+        return props.file.webViewLink
+    }
+
+    return null
+})
+
+const isImage = computed(() => {
+    const type = (props.file?.type || props.file?.mimeType?.split('/').pop() || '').toLowerCase()
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'image'].includes(type)
+})
+
+const isPDF = computed(() => {
+    const type = (props.file?.type || props.file?.mimeType?.split('/').pop() || '').toLowerCase()
+    return type === 'pdf'
+})
 </script>
 
 <template>
@@ -95,9 +127,14 @@ const getIconColor = (file) => {
 
                 <!-- Preview Content -->
                 <div class="w-full h-full flex items-center justify-center">
-                    <template v-if="(file.type || file.mimeType?.split('/').pop()) === 'jpg' || (file.type || file.mimeType?.split('/').pop()) === 'png'">
-                        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop"
-                            class="max-w-full max-h-full rounded-lg shadow-2xl object-contain" />
+                    <template v-if="isImage && previewUrl">
+                        <img :src="previewUrl"
+                            class="max-w-full max-h-full rounded-lg shadow-2xl object-contain border border-white/10"
+                            @error="(e) => e.target.src = ''" />
+                    </template>
+                    <template v-else-if="isPDF && previewUrl">
+                        <iframe :src="previewUrl" class="w-full h-full rounded-lg border-0 bg-white"
+                            shadow-2xl></iframe>
                     </template>
                     <template v-else-if="(file.type || file.mimeType?.split('/').pop()) === 'mp4'">
                         <div
@@ -112,6 +149,9 @@ const getIconColor = (file) => {
                                 <component :is="getFileIcon(file)" class="w-16 h-16" />
                             </div>
                             <p class="text-muted-foreground text-sm">Preview not available for this file type</p>
+                            <!-- <BaseButton v-if="file.webViewLink" variant="outline" size="sm" @click="window.open(file.webViewLink, '_blank')">
+                                View on Google Drive
+                            </BaseButton> -->
                         </div>
                     </template>
                 </div>
@@ -121,22 +161,27 @@ const getIconColor = (file) => {
             <div class="w-full lg:w-80 border-l border-border bg-background flex flex-col">
                 <div class="p-6 border-b border-border">
                     <h2 class="text-lg font-semibold mb-1 truncate">{{ file.name }}</h2>
-                    <p class="text-xs text-muted-foreground">{{ (file.type || file.mimeType?.split('/').pop() || 'FILE').toUpperCase() }} File • {{ file.size }}</p>
+                    <p class="text-xs text-muted-foreground">{{ (file.type || file.mimeType?.split('/').pop() ||
+                        'FILE').toUpperCase() }} File • {{ file.size }}</p>
                 </div>
 
                 <div class="flex-1 overflow-y-auto p-6 space-y-8">
                     <!-- Quick Actions -->
                     <div class="space-y-3">
                         <div class="grid grid-cols-2 gap-2">
-                            <BaseButton class="gap-2 bg-gray-900 text-accent-foreground hover:bg-gray-700" @click="emit('open-chat', file)">
+                            <BaseButton class="gap-2 bg-gray-900 text-accent-foreground hover:bg-gray-700"
+                                @click="emit('open-chat', file)">
                                 <MessageSquare class="w-4 h-4" />
                                 <span>Ask AI</span>
                             </BaseButton>
-                            <BaseButton class="gap-2 bg-accent text-accent-foreground hover:bg-[#129989]" @click="emit('share', file)">
+                            <BaseButton class="gap-2 bg-accent text-accent-foreground hover:bg-[#129989]"
+                                @click="emit('share', file)">
                                 <Share2 class="w-4 h-4" />
                                 <span>Share</span>
                             </BaseButton>
-                            <BaseButton variant="outline" class="gap-2 border-secondary text-secondary hover:bg-secondary hover:text-accent-foreground" @click="emit('download', file)">
+                            <BaseButton variant="outline"
+                                class="gap-2 border-secondary text-secondary hover:bg-secondary hover:text-accent-foreground"
+                                @click="emit('download', file)">
                                 <Download class="w-4 h-4" />
                                 <span>Download</span>
                             </BaseButton>
@@ -171,7 +216,8 @@ const getIconColor = (file) => {
                 </div>
 
                 <div class="p-6 border-t border-border">
-                    <BaseButton variant="outline" class="w-full border-pink-700 text-pink-700 hover:bg-pink-700 hover:text-white gap-2"
+                    <BaseButton variant="outline"
+                        class="w-full border-pink-700 text-pink-700 hover:bg-pink-700 hover:text-white gap-2"
                         @click="emit('delete', file)">
                         <Trash2 class="w-4 h-4" />
                         <span>Delete File</span>

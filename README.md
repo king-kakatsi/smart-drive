@@ -169,29 +169,20 @@ AI: "Based on 'Company A Proposal.pdf' and 'Company B Contract.docx':
 
 Smart-Drive follows a modern microservices-inspired architecture with clear separation of concerns:
 
+### System Representation
+
+![Backend Architecture](./docs/smart-drive-backend-representation.png)
+*Detailed Backend Flow and Processing Logic*
+
+![Frontend Architecture](./docs/smart-drive-frontend-representation.png)
+*Detailed Frontend Component and State Flow*
+
+### High-Level Flow
+
 ```
 ┌─────────────────┐    WebSocket    ┌─────────────────┐
 │   Vue 3 UI      │◄──────────────► │ FastAPI Backend │
 │   (Frontend)    │    HTTP/REST    │   (Backend)     │
-└─────────────────┘                 └─────────────────┘
-        │                                   │
-        │                                   │
-        ▼                                   ▼
-┌─────────────────┐                 ┌─────────────────┐
-│  Local Storage  │                 │ Google Drive    │
-│  (IndexedDB)    │                 │ API Integration │
-└─────────────────┘                 └─────────────────┘
-                                            │
-                                            ▼
-┌─────────────────┐                 ┌─────────────────┐
-│   SQLite DB     │◄──────────────► │   ChromaDB      │
-│ (Metadata)      │   Vector Store  │ (Embeddings)    │
-└─────────────────┘                 └─────────────────┘
-                                            │
-                                            ▼
-┌─────────────────┐                 ┌─────────────────┐
-│   File System   │                 │   AI Services   │
-│   (Uploads)     │                 │   (Groq/Whisper)│
 └─────────────────┘                 └─────────────────┘
 ```
 
