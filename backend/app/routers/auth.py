@@ -8,7 +8,7 @@ import secrets
 
 from app.dependencies import get_db, get_current_user
 from app.core.auth import create_access_token, verify_token
-from app.core.drive_client import get_google_auth_url, exchange_code_for_tokens
+from app.core.drive_client import get_google_auth_url, exchange_code_for_tokens, get_google_user_info
 from app.models.user import UserCreate, UserResponse
 from app.services.user_service import create_or_update_user
 
@@ -32,7 +32,7 @@ async def google_callback(
     """Handle Google OAuth2 callback"""
     try:
         # Exchange code for tokens
-        tokens = exchange_code_for_tokens(code)
+        tokens = await exchange_code_for_tokens(code)
 
         # Get user info from Google
         user_info = await get_google_user_info(tokens["access_token"])
@@ -46,6 +46,17 @@ async def google_callback(
         )
 
         user = await create_or_update_user(user_data, db)
+
+        # Store Google tokens in database
+        from app.services.google_token_service import store_google_tokens_for_user
+        
+        await store_google_tokens_for_user(
+            database=db,
+            user_id=user.id,
+            access_token=tokens["access_token"],
+            refresh_token=tokens.get("refresh_token"),
+            expires_in=tokens.get("expires_in", 3600)
+        )
 
         # Create JWT token
         access_token = create_access_token({"sub": str(user.id)})

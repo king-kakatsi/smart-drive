@@ -1,226 +1,348 @@
 # Smart-Drive
 
-AI-powered document and video analysis platform with Google Drive integration. Ask questions about your files and get intelligent answers using Groq AI.
+**Smart-Drive** is an AI-powered document and video analysis platform with Google Drive integration. Ask questions about your files and get intelligent answers using Groq AI. Built with Vue.js frontend and FastAPI backend, it provides seamless document analysis, video transcription, and real-time AI conversations.
 
-## Features
+## Overview
 
-- **Google Drive Integration**: Connect and sync your Google Drive files
-- **AI-Powered Q&A**: Ask questions about documents and videos
-- **Video Transcription**: Automatic speech-to-text using Whisper
-- **File Management**: Upload, organize, and manage files
-- **Real-time Chat**: WebSocket-powered AI conversations
-- **Multi-format Support**: PDF, DOCX, videos, images, and more
+Smart-Drive transforms how you interact with your documents and videos by combining powerful AI analysis with intuitive file management. Whether you're researching academic papers, analyzing business documents, or exploring video content, Smart-Drive delivers intelligent answers based on your actual files.
 
-## Architecture
+### Why Smart-Drive?
 
-```
-User <-> Vue3 UI
-| WebSocket
-FastAPI Backend
-|
-Google Drive API
-SQLite Metadata DB
-Chroma Vector DB
-Whisper (video -> text)
-Groq LLM API
-Local FS
-```
+- **AI-Powered Analysis**: Get intelligent answers from documents and videos using advanced RAG (Retrieval-Augmented Generation)
+- **Google Drive Integration**: Seamlessly connect and sync your Google Drive files
+- **Video Transcription**: Automatic speech-to-text with timestamp preservation
+- **Multi-format Support**: Process PDFs, DOCX, videos, images, and more
+- **Real-time Chat**: WebSocket-powered streaming AI conversations
+- **Vector Search**: Fast, semantic search across all your content
+- **Local Processing**: Zero-cost processing with local AI models
+- **Modern UI**: Clean, responsive Vue.js interface with TailwindCSS
 
-## Tech Stack
+## Key Features
 
-- **Frontend**: Vue 3 + Vite + TailwindCSS
-- **Backend**: FastAPI + WebSockets
-- **AI**: Groq API + ChromaDB + Whisper
+### AI Assistant (Core Feature)
+- **Document Analysis**: Extract and understand text from PDFs, DOCX, TXT files
+- **Video Analysis**: Whisper-powered transcription with timestamped Q&A
+- **Intelligent Q&A**: Ask contextual questions about your content
+- **Source Citations**: Every answer includes file references and locations
+- **Multi-file Queries**: Analyze multiple files simultaneously
+- **Streaming Responses**: Real-time AI responses via WebSocket
+
+### File Management System
+- **Google Drive Sync**: Automatic synchronization with Google Drive
+- **Local Upload**: Drag-and-drop file uploads with progress tracking
+- **File Explorer**: Intuitive file browser with preview capabilities
+- **Multi-format Support**: Support for documents, videos, images, and audio
+- **Smart Organization**: Automatic file categorization and metadata extraction
+
+### Advanced AI Features
+- **Vector Embeddings**: ChromaDB-powered semantic search
+- **Chunking Strategy**: Intelligent text chunking with overlap
+- **Context-Aware**: Responses based only on your indexed content
+- **Timestamp Queries**: Ask "What happens at 1:30?" in videos
+- **Cross-File Analysis**: Compare and analyze multiple documents
+
+## Screenshots
+
+### Dashboard Overview
+![Dashboard](./docs/screenshots/smart_drive_home.png)
+
+### File Explorer
+![File Explorer](./docs/screenshots/smart_drive_files.png)
+
+### AI Chat Interface
+![AI Chat](./docs/screenshots/smart_drive_chat.png)
+
+## Technology Stack
+
+### Frontend
+- **Framework**: Vue 3 + Composition API
+- **Build Tool**: Vite
+- **Styling**: TailwindCSS
+- **State Management**: Pinia
+- **Routing**: Vue Router
+- **HTTP Client**: Axios
+
+### Backend
+- **Framework**: FastAPI
+- **Language**: Python 3.12
+- **Real-time**: WebSockets
+- **Authentication**: JWT
 - **Database**: SQLite + ChromaDB
-- **Auth**: JWT + Google OAuth2
-- **Deployment**: Docker + Nginx
+- **AI**: Groq API + Whisper
 
-## Quick Start
+### AI & Data Processing
+- **LLM**: Groq API (OpenAI-compatible)
+- **Vector DB**: ChromaDB (local)
+- **Speech-to-Text**: Whisper (local)
+- **Embeddings**: Sentence transformers
+- **Document Processing**: PyPDF2, python-docx
+
+### External Integrations
+- **Google Drive**: Google Drive API v3
+- **OAuth2**: Google OAuth2 flow
+- **Authentication**: JWT tokens
+
+### Infrastructure
+- **Containerization**: Docker + Docker Compose
+- **Web Server**: Nginx (production)
+- **Reverse Proxy**: Nginx
+- **Development**: Hot reload for both frontend and backend
+
+## Quick Links
+
+- [Installation Guide](./docs/INSTALLATION.md)
+- [Quick Start](./docs/QUICKSTART.md)
+- [Architecture Overview](./docs/ARCHITECTURE.md)
+- [Configuration Guide](./docs/CONFIGURATION.md)
+- [API Reference](./docs/API_REFERENCE.md)
+- [Security Guide](./docs/SECURITY.md)
+- [Deployment Guide](./docs/DEPLOYMENT.md)
+- [Contributing](./docs/CONTRIBUTING.md)
+
+## Getting Started
 
 ### Prerequisites
 
-- Docker & Docker Compose
+- Python 3.12 or higher
+- Node.js 20.x or higher
+- Docker & Docker Compose (recommended)
 - Google Drive API credentials
 - Groq API key
 
-### Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd smart-drive
-   ```
-
-2. **Install dependencies**
-   ```bash
-   # Backend (Python)
-   cd backend
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-
-   # Frontend (Node.js)
-   cd ../frontend
-   npm install
-   ```
-
-3. **Configure environment**
-   ```bash
-   # Copy and edit environment file
-   cp backend/.env.example backend/.env
-   # Edit backend/.env with your API keys (Google Drive, Groq)
-   ```
-
-4. **Start development servers**
-   ```bash
-   # From project root
-   ./scripts/dev.sh
-
-   # Or manually:
-   # Terminal 1 - Backend
-   cd backend && source venv/bin/activate && python run.py
-
-   # Terminal 2 - Frontend
-   cd frontend && npm run dev
-   ```
-
-5. **Access the application**
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:8000
-   - API Docs: http://localhost:8000/docs
-
-### Docker Setup (Alternative)
+### Quick Start
 
 ```bash
-# Build and run with Docker
+# Clone the repository
+git clone https://github.com/king-kakatsi/smart-drive.git
+# Or using SSH:
+# git clone git@github.com:king-kakatsi/smart-drive.git
+cd smart-drive
+
+# Install dependencies
+make setup
+
+# Configure environment
+cp backend/.env.example backend/.env
+# Edit .env with your API keys
+
+# Start development servers
+make dev
+
+# Access the application
+# Frontend: http://localhost:5173
+# Backend API: http://localhost:8000
+# API Docs: http://localhost:8000/docs
+```
+
+For detailed setup instructions, see [INSTALLATION.md](./docs/INSTALLATION.md)
+
+## Usage Examples
+
+### Document Analysis
+```
+User: "What are the key findings in the research paper?"
+AI: "According to the paper 'Machine Learning Advances' (page 15), the key findings include:
+- Neural networks achieved 94% accuracy on benchmark datasets
+- Transfer learning reduced training time by 60%
+- The proposed architecture outperformed existing models by 12%"
+```
+
+### Video Q&A
+```
+User: "What happens at 2:30 in the tutorial video?"
+AI: "At timestamp 2:30 in 'Python Tutorial.mp4', the instructor demonstrates:
+- How to create virtual environments using venv
+- Installing packages with pip
+- Activating the environment on different operating systems"
+```
+
+### Cross-File Analysis
+```
+User: "Compare the pricing models in these two documents"
+AI: "Based on 'Company A Proposal.pdf' and 'Company B Contract.docx':
+- Company A: $50/user/month with annual billing discount
+- Company B: $75/user/month with no long-term commitments
+- Company A offers better value for organizations with 50+ users"
+```
+
+## Architecture Overview
+
+Smart-Drive follows a modern microservices-inspired architecture with clear separation of concerns:
+
+```
+┌─────────────────┐    WebSocket    ┌─────────────────┐
+│   Vue 3 UI      │◄──────────────► │ FastAPI Backend │
+│   (Frontend)    │    HTTP/REST    │   (Backend)     │
+└─────────────────┘                 └─────────────────┘
+        │                                   │
+        │                                   │
+        ▼                                   ▼
+┌─────────────────┐                 ┌─────────────────┐
+│  Local Storage  │                 │ Google Drive    │
+│  (IndexedDB)    │                 │ API Integration │
+└─────────────────┘                 └─────────────────┘
+                                            │
+                                            ▼
+┌─────────────────┐                 ┌─────────────────┐
+│   SQLite DB     │◄──────────────► │   ChromaDB      │
+│ (Metadata)      │   Vector Store  │ (Embeddings)    │
+└─────────────────┘                 └─────────────────┘
+                                            │
+                                            ▼
+┌─────────────────┐                 ┌─────────────────┐
+│   File System   │                 │   AI Services   │
+│   (Uploads)     │                 │   (Groq/Whisper)│
+└─────────────────┘                 └─────────────────┘
+```
+
+## Development Workflow
+
+### Running the Application
+
+```bash
+# Start all services with Docker
 docker-compose -f docker/docker-compose.yml up --build
+
+# Or run development servers manually
+make dev-backend  # Terminal 1
+make dev-frontend # Terminal 2
+```
+
+### Code Style
+
+- **Backend**: Black formatting, isort imports, flake8 linting
+- **Frontend**: ESLint, Prettier formatting
+- **Commits**: Angular commit convention
+- **Documentation**: Clear, concise, and comprehensive
+
+### Testing
+
+```bash
+# Backend tests
+cd backend && python -m pytest
+
+# Frontend tests
+cd frontend && npm run test
+
+# End-to-end tests
+npm run test:e2e
 ```
 
 ## Configuration
 
-### Environment Variables
+Smart-Drive uses environment-based configuration for security and flexibility:
 
 ```bash
-# Google Drive OAuth2
+# Essential configuration
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-
-# AI API Keys
 GROQ_API_KEY=your-groq-api-key
+SECRET_KEY=your-jwt-secret-key
 
-# Application
+# Optional configuration
 DEBUG=true
-SECRET_KEY=your-secret-key
 DATABASE_URL=sqlite:///./smart_drive.db
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
 ```
 
-### Google Drive Setup
+For complete configuration options, see [CONFIGURATION.md](./docs/CONFIGURATION.md)
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select existing
-3. Enable Google Drive API
-4. Create OAuth 2.0 credentials
-5. Add your domain to authorized origins
-6. Copy client ID and secret to `.env`
+## API Overview
 
-## Project Structure
+Smart-Drive provides REST APIs and WebSocket connections:
 
-```
-smart-drive/
-|-- backend/                          # FastAPI backend
-|   |-- app/
-|   |   |-- routers/                  # API routes
-|   |   |-- services/                 # Business logic
-|   |   |-- core/                     # Core utilities
-|   |   |-- models/                   # Pydantic models
-|   |   `-- utils/                    # Helper functions
-|   |-- external/                     # Cloned repositories
-|   |-- requirements.txt
-|   `-- Dockerfile
-|-- frontend/                         # Vue.js frontend
-|   |-- src/
-|   |   |-- components/               # Vue components
-|   |   |-- views/                    # Page components
-|   |   |-- stores/                   # Pinia stores
-|   |   |-- composables/              # Vue composables
-|   |   `-- utils/                    # Utilities
-|   |-- package.json
-|   `-- Dockerfile
-|-- docker/                           # Docker configuration
-|   |-- docker-compose.yml
-|   |-- nginx.conf
-|   `-- .env
-|-- scripts/                          # Setup scripts
-`-- docs/                             # Documentation
+### REST Endpoints
+- `POST /auth/login` - User authentication
+- `GET /files` - List user files
+- `POST /files/upload` - Upload files
+- `POST /drive/connect` - Connect Google Drive
+- `WebSocket /ws/chat` - Real-time AI chat
+
+### WebSocket Protocol
+```javascript
+// Connect to chat
+const ws = new WebSocket('ws://localhost:8000/ws/chat');
+
+// Send message
+ws.send(JSON.stringify({
+  message: "What are the main topics?",
+  file_ids: ["file1", "file2"]
+}));
+
+// Receive streaming response
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log(data.content); // Streaming content
+};
 ```
 
-## Usage
+For complete API documentation, see [API_REFERENCE.md](./docs/API_REFERENCE.md)
 
-### File Upload
-1. Navigate to Files section
-2. Drag & drop files or click to browse
-3. Files are automatically processed and indexed
+## Security Features
 
-### AI Chat
-1. Go to AI Chat section
-2. Ask questions about your uploaded files
-3. Get intelligent answers based on content
-4. For videos: Ask timestamp-specific questions like "What happens at 1:30?"
+- **JWT Authentication**: Secure token-based authentication
+- **OAuth2 Integration**: Secure Google Drive authorization
+- **File Validation**: Comprehensive upload validation
+- **Rate Limiting**: API request throttling
+- **HTTPS Only**: Encrypted communications in production
+- **Secure Storage**: Encrypted token storage
 
-### Google Drive Integration
-1. Go to Settings
-2. Click "Connect Google Drive"
-3. Authorize the application
-4. Your Drive files will be synced and searchable
-
-## AI Features
-
-- **Document Analysis**: Extract and understand text from PDFs, DOCX, TXT
-- **Video Transcription**: Convert speech to text with timestamps
-- **Semantic Search**: Find relevant content using vector similarity
-- **Contextual Responses**: AI answers based only on your files
-- **Multi-file Queries**: Analyze multiple files simultaneously
-
-## Security
-
-- JWT-based authentication
-- Secure file upload validation
-- API rate limiting
-- HTTPS encryption in production
-- Secure token storage
+For detailed security information, see [SECURITY.md](./docs/SECURITY.md)
 
 ## Deployment
 
 ### Development
 ```bash
+# Quick development setup
 docker-compose -f docker/docker-compose.yml up --build
 ```
 
 ### Production
 ```bash
-# Use production docker-compose
+# Production deployment
 docker-compose -f docker/docker-compose.prod.yml up -d
+
+# With SSL
+docker-compose -f docker/docker-compose.ssl.yml up -d
 ```
 
-## API Documentation
-
-Once running, visit `http://localhost:8000/docs` for interactive API documentation.
+For complete deployment guides, see [DEPLOYMENT.md](./docs/DEPLOYMENT.md)
 
 ## Contributing
 
+We welcome contributions! Please see [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for guidelines.
+
+### Development Setup
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Make your changes with tests
+4. Run tests: `make test`
 5. Submit a pull request
+
+## Built by
+
+### Leroi Kakatsi
+- **Email**: leroi.kakatsi@epitech.eu
+- **WhatsApp**: [+233 53 561 0908](https://wa.me/233535610908)
+- **Portfolio**: [king-kakatsi.netlify.app](https://king-kakatsi.netlify.app)
+
+## Resources
+
+- [Vue.js Documentation](https://vuejs.org/)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [ChromaDB Documentation](https://docs.trychroma.com/)
+- [Google Drive API](https://developers.google.com/drive/api)
+- [Groq API Documentation](https://console.groq.com/docs/)
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-- OpenAI for Whisper and Chroma examples
-- Google for Drive API samples
-- LangChain community for tutorials
-- Vue.js ecosystem for UI components
+- **OpenAI** for Whisper and ChromaDB examples
+- **Google** for Drive API documentation and samples
+- **LangChain** community for AI integration tutorials
+- **Vue.js** ecosystem for excellent UI components
+- **FastAPI** team for the amazing web framework
+- **ChromaDB** for the vector database solution

@@ -67,7 +67,7 @@ async def create_or_update_user(user_data: UserCreate, db: AsyncSession) -> User
         user = result.fetchone()
 
     await db.commit()
-    return UserInDB(**dict(user))
+    return UserInDB(**user._asdict())
 
 
 async def get_user_by_id(user_id: int, db: AsyncSession) -> Optional[UserInDB]:
@@ -77,7 +77,7 @@ async def get_user_by_id(user_id: int, db: AsyncSession) -> Optional[UserInDB]:
         {"user_id": user_id}
     )
     user = result.fetchone()
-    return UserInDB(**dict(user)) if user else None
+    return UserInDB(**user._asdict()) if user else None
 
 
 async def get_user_by_email(email: str, db: AsyncSession) -> Optional[UserInDB]:
@@ -87,6 +87,6 @@ async def get_user_by_email(email: str, db: AsyncSession) -> Optional[UserInDB]:
         {"email": email}
     )
     user = result.fetchone()
-    return UserInDB(**dict(user)) if user else None
+    return UserInDB(**user._asdict()) if user else None
 
 

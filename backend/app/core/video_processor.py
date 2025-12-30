@@ -57,6 +57,20 @@ class VideoProcessor:
         # Add timestamped segments for precise Q&A
         await self._index_segments(segments, file_id, metadata)
 
+        # Update database status
+        try:
+            from app.database import async_session
+            from sqlalchemy import text
+            
+            async with async_session() as session:
+                await session.execute(
+                    text("UPDATE files SET processed = 1, transcription_path = :transcription_path WHERE id = :file_id"),
+                    {"file_id": file_id, "transcription_path": transcription_path}
+                )
+                await session.commit()
+        except Exception as e:
+            print(f"Error updating video status for {file_id}: {str(e)}")
+
         # Update file record with transcription path
         return transcription_path
 

@@ -25,7 +25,7 @@ class GoogleDriveClient:
         params = {
             "client_id": self.client_id,
             "redirect_uri": self.redirect_uri,
-            "scope": "https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file",
+            "scope": "openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive",
             "response_type": "code",
             "access_type": "offline",
             "prompt": "consent"
@@ -113,6 +113,102 @@ class GoogleDriveClient:
                     raise Exception(f"Failed to download file: {response.status} - {error_text}")
 
                 return await response.read()
+
+    async def upload_file(self, access_token: str, file_metadata: Dict[str, Any], file_content: bytes, mime_type: str) -> Dict[str, Any]:
+        """Upload a file to Google Drive using multipart upload"""
+        import aiohttp
+        import json
+
+        upload_url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart"
+        headers = {"Authorization": f"Bearer {access_token}"}
+        print(f"DEBUG: Starting upload to Google Drive for {file_metadata.get('name')}")
+
+        # Create multipart request
+        boundary = "boundary123"
+        headers["Content-Type"] = f"multipart/related; boundary={boundary}"
+
+        # Create multipart body
+        # Part 1: Metadata
+        metadata_part = (
+            f"--{boundary}\r\n"
+            "Content-Type: application/json; charset=UTF-8\r\n\r\n"
+            f"{json.dumps(file_metadata)}\r\n"
+        ).encode('utf-8')
+
+        # Part 2: Media content
+        media_header = (
+            f"--{boundary}\r\n"
+            f"Content-Type: {mime_type or 'application/octet-stream'}\r\n\r\n"
+        ).encode('utf-8')
+
+        # Part 3: Footer
+        footer = f"\r\n--{boundary}--\r\n".encode('utf-8')
+
+        # Combine all
+        data = metadata_part + media_header + file_content + footer
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(upload_url, headers=headers, data=data) as response:
+                if response.status not in (200, 201):
+                    error_text = await response.text()
+                    raise Exception(f"Google Drive API error: {response.status} - {error_text}")
+
+                return await response.json()
+
+    async def export_file(self, access_token: str, file_id: str, mime_type: str) -> bytes:
+        """Export a Google native file to a standard format"""
+
+        export_url = f"https://www.googleapis.com/drive/v3/files/{file_id}/export"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Accept": mime_type
+        }
+
+        params = {"mimeType": mime_type}
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(export_url, headers=headers, params=params) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"Failed to export file: {response.status} - {error_text}")
+
+                return await response.read()
+
+    async def delete_file(self, access_token: str, file_id: str) -> bool:
+        """Delete (trash) a file from Google Drive by setting trashed=true"""
+        print(f"Making PATCH request to Google Drive API for file {file_id}")
+        update_url = f"https://www.googleapis.com/drive/v3/files/{file_id}?fields=trashed"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        data = {"trashed": True}
+
+        async with aiohttp.ClientSession() as session:
+            async with session.patch(update_url, headers=headers, json=data) as response:
+                print(f"Google Drive API response status: {response.status}")
+                if response.status == 200:
+                    return True
+                elif response.status == 404:
+                    raise Exception(f"File {file_id} not found")
+                else:
+                    error_text = await response.text()
+                    print(f"Error response: {error_text}")
+                    raise Exception(f"Failed to delete file: {response.status} - {error_text}")
+
+    async def get_storage_quota(self, access_token: str) -> Dict[str, Any]:
+        """Get Google Drive storage quota info"""
+        about_url = "https://www.googleapis.com/drive/v3/about"
+        headers = {"Authorization": f"Bearer {access_token}"}
+        params = {"fields": "storageQuota, user"}
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(about_url, headers=headers, params=params) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"Failed to get storage quota: {response.status} - {error_text}")
+
+                return await response.json()
 
 
 # Global Drive client instance

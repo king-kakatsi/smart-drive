@@ -1,30 +1,40 @@
 <template>
-  <div id="app" class="min-h-screen bg-gray-50 flex items-center justify-center">
-    <div class="text-center">
-      <h1 class="text-4xl font-bold text-blue-600 mb-4">
-        Smart-Drive
-      </h1>
-      <p class="text-lg text-gray-600 mb-8">
-        AI-powered document and video analysis platform
-      </p>
-      <div class="bg-white rounded-lg shadow-md p-6 max-w-md">
-        <p class="text-gray-700">
-          Vue.js frontend is working!
-        </p>
-        <p class="text-sm text-gray-500 mt-2">
-          Ready for development
-        </p>
-      </div>
-    </div>
-  </div>
+  <MainLayout>
+    <router-view />
+  </MainLayout>
 </template>
 
 <script setup>
-// Simplified App component for testing
+import { onMounted } from 'vue'
+import MainLayout from '@/components/layout/MainLayout.vue'
+import { useAuthStore } from '@/stores/auth'
+import { useFilesStore } from '@/stores/files'
+
+const authStore = useAuthStore()
+const filesStore = useFilesStore()
+
+onMounted(async () => {
+  // Initialize the files store (load persisted data)
+  filesStore.initializeStore()
+
+  // Load files data if user is authenticated
+  if (authStore.isAuthenticated && !filesStore.isDataLoaded) {
+    filesStore.isLoading = true
+    try {
+      await Promise.all([
+        filesStore.fetchAllFiles(),
+        filesStore.fetchDriveFiles(100)
+      ])
+      filesStore.isDataLoaded = true
+    } catch (error) {
+      console.error('Failed to load initial data:', error)
+    } finally {
+      filesStore.isLoading = false
+    }
+  }
+})
 </script>
 
 <style scoped>
 /* Basic styles */
 </style>
-
-
