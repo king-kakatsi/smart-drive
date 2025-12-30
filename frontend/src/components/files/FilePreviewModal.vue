@@ -36,28 +36,23 @@ const getFileIcon = (file) => {
         return Folder
     }
 
-    const type = file.type || file.mimeType?.split('/').pop() || 'file'
-    switch (type.toLowerCase()) {
-        case 'pdf':
-        case 'doc':
-        case 'docx':
-        case 'txt':
-            return FileText
-        case 'mp4':
-        case 'mov':
-        case 'avi':
-            return Video
-        case 'mp3':
-        case 'wav':
-            return Music
-        case 'jpg':
-        case 'jpeg':
-        case 'png':
-        case 'gif':
-            return ImageIcon
-        default:
-            return File
-    }
+    // Unified type extraction
+    const rawType = file.file_type || file.type || ''
+    const mime = (file.mimeType || file.mime_type || '').split('/').pop() || ''
+    const extension = (file.original_filename || file.name || '').split('.').pop() || ''
+    
+    const type = (rawType || mime || extension || 'file').toLowerCase()
+
+    if (type.includes('pdf')) return FileText
+    if (['doc', 'docx', 'word', 'document'].some(t => type.includes(t))) return FileText
+    if (['txt', 'text', 'markdown', 'md'].some(t => type.includes(t))) return FileText
+    
+    if (['mp4', 'mov', 'avi', 'video'].some(t => type.includes(t))) return Video
+    if (['mp3', 'wav', 'audio'].some(t => type.includes(t))) return Music
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'image'].some(t => type.includes(t))) return ImageIcon
+    
+    return File
 }
 
 const getIconColor = (file) => {
@@ -68,18 +63,20 @@ const getIconColor = (file) => {
         return 'text-yellow-600'
     }
 
-    const type = file.type || file.mimeType?.split('/').pop() || 'file'
-    switch (type.toLowerCase()) {
-        case 'pdf': return 'text-red-500'
-        case 'doc':
-        case 'docx': return 'text-blue-500'
-        case 'mp4':
-        case 'mov': return 'text-purple-500'
-        case 'mp3': return 'text-pink-500'
-        case 'jpg':
-        case 'png': return 'text-orange-500'
-        default: return 'text-gray-500'
-    }
+    // Unified type extraction
+    const rawType = file.file_type || file.type || ''
+    const mime = (file.mimeType || file.mime_type || '').split('/').pop() || ''
+    const type = (rawType || mime || 'file').toLowerCase()
+
+    if (type.includes('pdf')) return 'text-red-500'
+    if (['doc', 'docx', 'word', 'document'].some(t => type.includes(t))) return 'text-blue-500'
+    
+    if (['mp4', 'mov', 'video'].some(t => type.includes(t))) return 'text-purple-500'
+    if (['mp3', 'wav', 'audio'].some(t => type.includes(t))) return 'text-pink-500'
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'image'].some(t => type.includes(t))) return 'text-orange-500'
+    
+    return 'text-gray-500'
 }
 
 const previewUrl = computed(() => {
