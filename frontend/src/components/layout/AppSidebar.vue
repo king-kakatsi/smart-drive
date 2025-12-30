@@ -108,8 +108,8 @@ const isActive = (path) => route.path === path
       </router-link>
     </nav>
 
-    <!-- Bottom Section -->
-    <div class="p-6 space-y-6">
+    <!-- Bottom Section (Desktop Only) -->
+    <div class="p-6 space-y-6 hidden lg:block border-t border-white/5">
       <!-- Storage Indicator -->
       <div
         class="relative p-5 rounded-3xl bg-white/5 dark:bg-slate-900/50 border border-white/10 group overflow-hidden">
