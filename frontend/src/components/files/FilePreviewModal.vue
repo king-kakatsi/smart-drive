@@ -40,18 +40,18 @@ const getFileIcon = (file) => {
     const rawType = file.file_type || file.type || ''
     const mime = (file.mimeType || file.mime_type || '').split('/').pop() || ''
     const extension = (file.original_filename || file.name || '').split('.').pop() || ''
-    
+
     const type = (rawType || mime || extension || 'file').toLowerCase()
 
     if (type.includes('pdf')) return FileText
     if (['doc', 'docx', 'word', 'document'].some(t => type.includes(t))) return FileText
     if (['txt', 'text', 'markdown', 'md'].some(t => type.includes(t))) return FileText
-    
+
     if (['mp4', 'mov', 'avi', 'video'].some(t => type.includes(t))) return Video
     if (['mp3', 'wav', 'audio'].some(t => type.includes(t))) return Music
-    
+
     if (['jpg', 'jpeg', 'png', 'gif', 'image'].some(t => type.includes(t))) return ImageIcon
-    
+
     return File
 }
 
@@ -70,12 +70,12 @@ const getIconColor = (file) => {
 
     if (type.includes('pdf')) return 'text-red-500'
     if (['doc', 'docx', 'word', 'document'].some(t => type.includes(t))) return 'text-blue-500'
-    
+
     if (['mp4', 'mov', 'video'].some(t => type.includes(t))) return 'text-purple-500'
     if (['mp3', 'wav', 'audio'].some(t => type.includes(t))) return 'text-pink-500'
-    
+
     if (['jpg', 'jpeg', 'png', 'gif', 'image'].some(t => type.includes(t))) return 'text-orange-500'
-    
+
     return 'text-gray-500'
 }
 
@@ -133,7 +133,8 @@ const isPDF = computed(() => {
                             @error="(e) => e.target.src = ''" />
                     </template>
                     <template v-else-if="isPDF && previewUrl">
-                         <iframe :src="previewUrl" class="w-full h-full rounded-lg border-0 bg-white" shadow-2xl></iframe>
+                        <iframe :src="previewUrl" class="w-full h-full rounded-lg border-0 bg-white"
+                            shadow-2xl></iframe>
                     </template>
                     <template v-else-if="(file.type || file.mimeType?.split('/').pop()) === 'mp4'">
                         <div
@@ -148,9 +149,9 @@ const isPDF = computed(() => {
                                 <component :is="getFileIcon(file)" class="w-16 h-16" />
                             </div>
                             <p class="text-muted-foreground text-sm">Preview not available for this file type</p>
-                            <BaseButton v-if="file.webViewLink" variant="outline" size="sm" @click="window.open(file.webViewLink, '_blank')">
+                            <!-- <BaseButton v-if="file.webViewLink" variant="outline" size="sm" @click="window.open(file.webViewLink, '_blank')">
                                 View on Google Drive
-                            </BaseButton>
+                            </BaseButton> -->
                         </div>
                     </template>
                 </div>
@@ -160,22 +161,27 @@ const isPDF = computed(() => {
             <div class="w-full lg:w-80 border-l border-border bg-background flex flex-col">
                 <div class="p-6 border-b border-border">
                     <h2 class="text-lg font-semibold mb-1 truncate">{{ file.name }}</h2>
-                    <p class="text-xs text-muted-foreground">{{ (file.type || file.mimeType?.split('/').pop() || 'FILE').toUpperCase() }} File • {{ file.size }}</p>
+                    <p class="text-xs text-muted-foreground">{{ (file.type || file.mimeType?.split('/').pop() ||
+                        'FILE').toUpperCase() }} File • {{ file.size }}</p>
                 </div>
 
                 <div class="flex-1 overflow-y-auto p-6 space-y-8">
                     <!-- Quick Actions -->
                     <div class="space-y-3">
                         <div class="grid grid-cols-2 gap-2">
-                            <BaseButton class="gap-2 bg-gray-900 text-accent-foreground hover:bg-gray-700" @click="emit('open-chat', file)">
+                            <BaseButton class="gap-2 bg-gray-900 text-accent-foreground hover:bg-gray-700"
+                                @click="emit('open-chat', file)">
                                 <MessageSquare class="w-4 h-4" />
                                 <span>Ask AI</span>
                             </BaseButton>
-                            <BaseButton class="gap-2 bg-accent text-accent-foreground hover:bg-[#129989]" @click="emit('share', file)">
+                            <BaseButton class="gap-2 bg-accent text-accent-foreground hover:bg-[#129989]"
+                                @click="emit('share', file)">
                                 <Share2 class="w-4 h-4" />
                                 <span>Share</span>
                             </BaseButton>
-                            <BaseButton variant="outline" class="gap-2 border-secondary text-secondary hover:bg-secondary hover:text-accent-foreground" @click="emit('download', file)">
+                            <BaseButton variant="outline"
+                                class="gap-2 border-secondary text-secondary hover:bg-secondary hover:text-accent-foreground"
+                                @click="emit('download', file)">
                                 <Download class="w-4 h-4" />
                                 <span>Download</span>
                             </BaseButton>
@@ -210,7 +216,8 @@ const isPDF = computed(() => {
                 </div>
 
                 <div class="p-6 border-t border-border">
-                    <BaseButton variant="outline" class="w-full border-pink-700 text-pink-700 hover:bg-pink-700 hover:text-white gap-2"
+                    <BaseButton variant="outline"
+                        class="w-full border-pink-700 text-pink-700 hover:bg-pink-700 hover:text-white gap-2"
                         @click="emit('delete', file)">
                         <Trash2 class="w-4 h-4" />
                         <span>Delete File</span>

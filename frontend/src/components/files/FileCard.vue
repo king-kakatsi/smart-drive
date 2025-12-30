@@ -245,14 +245,14 @@ const formatDate = (file) => {
                 </h3>
                 <div
                     class="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest opacity-60">
-                    <span>{{ (file.type || file.mimeType?.split('/').pop() || 'FILE') }}</span>
+                    <span>{{ (file.file_type || file.type || file.mimeType?.split('/').pop() || 'FILE') }}</span>
                     <span>•</span>
-                    <span>{{ file.size }}</span>
+                    <span>{{ formatSize(file.size || file.file_size) }}</span>
                 </div>
             </div>
 
             <div class="hidden md:block text-[11px] text-muted-foreground font-medium px-4">
-                {{ file.updatedAt || new Date(file.created_at).toLocaleDateString() }}
+                {{ formatDate(file) }}
             </div>
 
             <div
@@ -260,13 +260,18 @@ const formatDate = (file) => {
                 <template v-if="!isFolder">
                     <button
                         class="p-2 hover:bg-primary/10 rounded-xl text-muted-foreground hover:text-primary transition-all"
-                        @click.stop="emit('preview', file)">
+                        @click.stop="emit('preview', file)" title="Preview">
                         <Eye class="w-4 h-4" />
                     </button>
                     <button
                         class="p-2 hover:bg-secondary/10 rounded-xl text-muted-foreground hover:text-secondary transition-all"
-                        @click.stop="emit('open-chat', file)">
+                        @click.stop="emit('open-chat', file)" title="AI Chat">
                         <MessageSquare class="w-4 h-4" />
+                    </button>
+                    <button
+                        class="p-2 hover:bg-green-500/10 rounded-xl text-muted-foreground hover:text-green-600 transition-all"
+                        @click.stop="emit('open-in-tab', file)" title="Open in New Tab">
+                        <ExternalLink class="w-4 h-4" />
                     </button>
                 </template>
 

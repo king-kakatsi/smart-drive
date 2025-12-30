@@ -88,7 +88,8 @@ const handleOpenFile = (file) => {
       window.open(file.webViewLink, '_blank')
     } else if (file.id && !isNaN(file.id)) {
       // For local files, use the backend download endpoint
-      const downloadUrl = `/api/v1/files/${file.id}/download`
+      const token = localStorage.getItem('access_token')
+      const downloadUrl = `/api/v1/files/${file.id}/download?token=${token}`
       window.open(downloadUrl, '_blank')
     } else {
       console.error('Cannot open file: invalid file data', file)
@@ -148,7 +149,8 @@ const handleOpenInTab = async (file) => {
       window.open(file.webViewLink, '_blank')
     } else if (file.id && !isNaN(file.id)) {
       // Local file - use preview endpoint
-      const previewUrl = `/api/v1/files/${file.id}/preview`
+      const token = localStorage.getItem('access_token')
+      const previewUrl = `/api/v1/files/${file.id}/preview?token=${token}`
       window.open(previewUrl, '_blank')
     } else {
       console.error('Cannot open file in tab: invalid file data', file)
