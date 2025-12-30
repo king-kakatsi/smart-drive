@@ -99,7 +99,8 @@ const handleOpenFile = (file) => {
 }
 
 const handleDelete = async (file) => {
-  if (confirm(`Are you sure you want to delete "${file.name}"?`)) {
+  const fileName = file.name || file.original_filename || file.filename || 'this file'
+  if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
     try {
       await filesStore.deleteFile(file.id)
       // Close the preview modal after successful deletion

@@ -166,7 +166,7 @@ export const useFilesStore = defineStore('files', {
           throw new Error('File not found')
         }
 
-        // Delete using appropriate service
+        // Update appropriate arrays
         if (isDriveFile || file.webViewLink) {
           // Google Drive file
           await driveService.deleteDriveFile(fileId)
@@ -177,8 +177,14 @@ export const useFilesStore = defineStore('files', {
           this.localFiles = this.localFiles.filter(f => f.id !== fileId)
         }
 
+        // Fix: Also filter folderContents to update the UI reactively
+        this.folderContents = this.folderContents.filter(f => f.id !== fileId)
+
         // Remove from selected files
         this.selectedFiles = this.selectedFiles.filter(id => id !== fileId)
+
+        // Refresh storage metrics after deletion
+        this.fetchStorageMetrics().catch(err => console.warn('Failed to refresh metrics:', err))
       } catch (error) {
         this.error = error.detail || 'Failed to delete file'
         throw error
