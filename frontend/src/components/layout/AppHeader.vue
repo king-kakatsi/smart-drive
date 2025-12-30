@@ -18,6 +18,11 @@ const user = computed(() => authStore.user || {
   full_name: 'User'
 })
 
+const showSearch = computed(() => {
+  const hiddenOn = ['Dashboard', 'AIChat']
+  return !hiddenOn.includes(router.currentRoute.value.name)
+})
+
 // Redirect to files view when searching from other pages
 import { watch } from 'vue'
 watch(() => filesStore.searchQuery, (query) => {
@@ -36,9 +41,9 @@ watch(() => filesStore.searchQuery, (query) => {
         <Menu class="w-5 h-5" />
       </BaseButton>
 
-      <div class="relative w-full max-w-xl hidden md:block group">
+      <div v-if="showSearch" class="relative w-full max-w-xl hidden md:block group">
         <div
-          class="absolute inset-0 bg-primary/5 rounded-2xl blur-md opacity-0 group-focus-within:opacity-100 transition-opacity" />
+          class="absolute inset-0 bg-primary/5 rounded-2xl blur-md opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none" />
         <Search
           class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
         <input v-model="filesStore.searchQuery" placeholder="Search your intelligent drive..."
