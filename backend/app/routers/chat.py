@@ -95,9 +95,10 @@ async def chat_websocket(
 
             if search_results.get("documents"):
                 for i, doc in enumerate(search_results["documents"][0]):
-                    context += f"\nDocument {i+1}: {doc[:1000]}..."  # Limit context length
-                    if search_results.get("metadatas") and search_results["metadatas"][0]:
-                        sources.append(search_results["metadatas"][0][i])
+                    metadata = search_results["metadatas"][0][i] if (search_results.get("metadatas") and search_results["metadatas"][0]) else {}
+                    filename = metadata.get("filename") or metadata.get("name") or f"Document {i+1}"
+                    context += f"\nSource: {filename}\nContent Snippet: {doc[:1000]}\n---\n"
+                    sources.append(metadata)
 
             # Build AI prompt
             system_prompt = f"""You are SmartDrive AI, an expert document assistant.
@@ -211,9 +212,10 @@ async def chat_message(
 
     if search_results.get("documents"):
         for i, doc in enumerate(search_results["documents"][0]):
-            context += f"\nDocument {i+1}: {doc[:1000]}..."
-            if search_results.get("metadatas") and search_results["metadatas"][0]:
-                sources.append(search_results["metadatas"][0][i])
+            metadata = search_results["metadatas"][0][i] if (search_results.get("metadatas") and search_results["metadatas"][0]) else {}
+            filename = metadata.get("filename") or metadata.get("name") or f"Document {i+1}"
+            context += f"\nSource: {filename}\nContent Snippet: {doc[:1000]}\n---\n"
+            sources.append(metadata)
 
     # Get AI response
     ai_client = get_ai_client()
