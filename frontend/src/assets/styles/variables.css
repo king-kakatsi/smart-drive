@@ -32,6 +32,20 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: #E5E7EB;
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* File Type Colors - Premium Palette */
+  --file-pdf: #ff4d4d;
+  --file-word: #2b579a;
+  --file-excel: #217346;
+  --file-ppt: #d24726;
+  --file-video: #8b5cf6;
+  --file-image: #f59e0b;
+  --file-audio: #ec4899;
+  --file-folder: #facc15;
+
+  /* Glassmorphism utils */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
 }
 
 .dark {
@@ -63,4 +77,8 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+
+  /* Glassmorphism utils dark */
+  --glass-bg: rgba(13, 17, 23, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
 }

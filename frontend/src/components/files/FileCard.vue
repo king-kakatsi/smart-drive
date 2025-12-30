@@ -114,84 +114,108 @@ const getIconColor = (file) => {
     if (file.mimeType === 'application/vnd.google-apps.folder' ||
         file.type === 'folder' ||
         file.file_type === 'folder') {
-        return 'text-yellow-600 bg-yellow-50'
+        return 'text-[var(--file-folder)] bg-[var(--file-folder)]/10'
     }
 
     const type = file.type || file.mimeType?.split('/').pop() || 'file'
     switch (type.toLowerCase()) {
-        case 'pdf': return 'text-red-500 bg-red-50'
+        case 'pdf': return 'text-[var(--file-pdf)] bg-[var(--file-pdf)]/10'
         case 'doc':
-        case 'docx': return 'text-blue-500 bg-blue-50'
+        case 'docx': return 'text-[var(--file-word)] bg-[var(--file-word)]/10'
         case 'mp4':
-        case 'mov': return 'text-purple-500 bg-purple-50'
-        case 'mp3': return 'text-pink-500 bg-pink-50'
+        case 'mov':
+        case 'video': return 'text-[var(--file-video)] bg-[var(--file-video)]/10'
+        case 'mp3':
+        case 'wav':
+        case 'audio': return 'text-[var(--file-audio)] bg-[var(--file-audio)]/10'
         case 'jpg':
-        case 'png': return 'text-orange-500 bg-orange-50'
-        default: return 'text-gray-500 bg-gray-50'
+        case 'jpeg':
+        case 'png':
+        case 'gif':
+        case 'image': return 'text-[var(--file-image)] bg-[var(--file-image)]/10'
+        default: return 'text-primary bg-primary/10'
     }
 }
 </script>
 
 <template>
     <div :class="cn(
-        'group relative bg-card rounded-xl border border-border transition-all duration-200',
+        'group relative rounded-2xl border transition-all duration-300',
+        'backdrop-blur-sm bg-white/40 dark:bg-slate-900/40 border-white/20 dark:border-white/5',
         viewMode === 'grid'
-            ? 'p-4 hover:shadow-lg hover:-translate-y-1 hover:z-[10000]'
-            : 'flex items-center gap-4 p-3 hover:bg-muted/50',
+            ? 'p-4 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1.5'
+            : 'flex items-center gap-4 p-3 hover:bg-muted/40',
+        isFileStarred && 'border-primary/20 bg-primary/[0.02]',
         isFolder ? 'cursor-pointer' : ''
-    )" @mouseenter="isHovered = true" @mouseleave="isHovered = false" @click="handleCardClick">
+    )" @click="handleCardClick" @mouseenter="isHovered = true" @mouseleave="isHovered = false">
+
         <!-- Grid View -->
         <template v-if="viewMode === 'grid'">
-            <div
-                class="aspect-video mb-4 rounded-lg overflow-hidden bg-muted/30 flex items-center justify-center relative">
-                <component :is="getFileIcon(file)" :class="cn('w-12 h-12', getIconColor(file).split(' ')[0])" />
+            <div class="relative mb-4">
+                <!-- Icon/Thumbnail Container -->
+                <div :class="cn(
+                    'aspect-[4/3] rounded-xl flex items-center justify-center transition-all duration-500',
+                    getIconColor(file),
+                    'group-hover:scale-105 group-hover:rotate-1 shadow-sm relative overflow-hidden'
+                )">
+                    <component :is="getFileIcon(file)"
+                        :class="cn('w-12 h-12 relative z-10', getIconColor(file).split(' ')[0])" />
+                </div>
 
-                <!-- Hover Actions Overlay (only for files, not folders) -->
-                <Transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0"
-                    enter-to-class="opacity-100" leave-active-class="transition duration-150 ease-in"
-                    leave-from-class="opacity-100" leave-to-class="opacity-0">
-                    <div v-if="isHovered && !isFolder"
-                        class="absolute inset-0 bg-black/40 flex items-center justify-center gap-2">
-                        <button class="p-2 bg-white rounded-lg hover:scale-110 transition-transform" title="Preview"
-                            @click.stop="emit('preview', file)">
-                            <Eye class="w-4 h-4 text-gray-900" />
-                        </button>
-                        <button class="p-2 bg-primary rounded-lg hover:scale-110 transition-transform" title="Ask AI"
-                            @click.stop="emit('open-chat', file)">
-                            <MessageSquare class="w-4 h-4 text-white" />
-                        </button>
-                        <button class="p-2 bg-green-500 rounded-lg hover:scale-110 transition-transform"
-                            title="Open in New Tab" @click.stop="emit('open-in-tab', file)">
-                            <ExternalLink class="w-4 h-4 text-white" />
-                        </button>
-                    </div>
-                </Transition>
-
-                <!-- Star button (only for files, not folders) -->
+                <!-- Star Toggle (Overlay) -->
                 <button v-if="!isFolder"
-                    class="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition-colors"
+                    class="absolute top-2 right-2 p-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 opacity-0 group-hover:opacity-100 transition-all hover:bg-white/40 z-30"
                     @click.stop="emit('toggle-star', file)">
                     <Star
-                        :class="cn('w-3.5 h-3.5', isFileStarred ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400')" />
+                        :class="cn('w-3.5 h-3.5 transition-colors', isFileStarred ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400')" />
                 </button>
             </div>
 
-            <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
-                    <h3 class="text-sm font-medium truncate mb-1">{{ displayName }}</h3>
-                    <div class="flex items-center gap-2 text-[10px] text-muted-foreground">
-                        <span>{{ file.size }}</span>
-                        <span>•</span>
-                        <span>{{ file.updatedAt }}</span>
-                    </div>
-                </div>
+            <!-- File Info -->
+            <div class="space-y-1">
+                <h3 class="text-sm font-semibold truncate group-hover:text-primary transition-colors">
+                    {{ displayName }}
+                </h3>
 
-                <!-- <Dropdown v-if="!isFolder" class="shrink-0 bg-gray-100">
+                <div
+                    class="flex items-center text-[10px] text-muted-foreground font-medium uppercase tracking-wider opacity-80">
+                    <span>{{ file.size || 'Size N/A' }}</span>
+                    <span class="mx-1.5 text-muted-foreground/30">•</span>
+                    <span>{{ file.updatedAt || new Date(file.created_at).toLocaleDateString() }}</span>
+                </div>
+            </div>
+
+            <!-- Floating Actions Bar (Subtle) -->
+            <div :class="cn(
+                'absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 p-1 rounded-full',
+                'bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-xl shadow-xl border border-white/20 transition-all duration-300',
+                'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto z-50'
+            )">
+                <button v-if="!isFolder"
+                    class="p-2 rounded-full hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all"
+                    @click.stop="emit('preview', file)" title="Preview">
+                    <Eye class="w-4 h-4" />
+                </button>
+                <button v-if="!isFolder"
+                    class="p-2 rounded-full hover:bg-secondary/10 text-muted-foreground hover:text-secondary transition-all"
+                    @click.stop="emit('open-chat', file)" title="AI Chat">
+                    <MessageSquare class="w-4 h-4" />
+                </button>
+                <button v-if="!isFolder"
+                    class="p-2 rounded-full hover:bg-green-500/10 text-muted-foreground hover:text-green-600 transition-all"
+                    @click.stop="emit('open-in-tab', file)" title="Open in New Tab">
+                    <ExternalLink class="w-4 h-4" />
+                </button>
+                <!-- Dropdown commented out as requested -->
+                <!-- <Dropdown v-if="!isFolder">
                     <template #trigger>
-                        <button class="p-1 hover:bg-muted rounded transition-colors">
+                        <button class="p-2 rounded-full hover:bg-muted transition-all">
                             <MoreVertical class="w-4 h-4 text-muted-foreground" />
                         </button>
                     </template>
+<DropdownItem @click.stop="emit('share', file)">
+    <Share2 class="w-4 h-4 mr-2" /> Share
+</DropdownItem>
 <DropdownItem @click.stop="emit('download', file)">
     <Download class="w-4 h-4 mr-2" /> Download
 </DropdownItem>
@@ -204,55 +228,59 @@ const getIconColor = (file) => {
 
         <!-- List View -->
         <template v-else>
-            <div :class="cn('w-10 h-10 rounded-lg flex items-center justify-center shrink-0', getIconColor(file))">
-                <component :is="getFileIcon(file)" class="w-5 h-5" />
+            <div
+                :class="cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105', getIconColor(file))">
+                <component :is="getFileIcon(file)" :class="cn('w-5 h-5', getIconColor(file).split(' ')[0])" />
             </div>
 
             <div class="flex-1 min-w-0">
-                <h3 class="text-sm font-medium truncate">{{ displayName }}</h3>
-                <p class="text-[10px] text-muted-foreground">{{ (file.type || file.mimeType?.split('/').pop() ||
-                    'FILE').toUpperCase() }} • {{ file.size }}</p>
+                <h3 class="text-sm font-semibold truncate group-hover:text-primary transition-colors">{{ displayName }}
+                </h3>
+                <div
+                    class="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest opacity-60">
+                    <span>{{ (file.type || file.mimeType?.split('/').pop() || 'FILE') }}</span>
+                    <span>•</span>
+                    <span>{{ file.size }}</span>
+                </div>
             </div>
 
-            <div class="hidden md:block text-xs text-muted-foreground px-4">
-                {{ file.updatedAt }}
+            <div class="hidden md:block text-[11px] text-muted-foreground font-medium px-4">
+                {{ file.updatedAt || new Date(file.created_at).toLocaleDateString() }}
             </div>
 
-            <!-- Hover actions (only for files, not folders) -->
-            <div v-if="!isFolder" class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                    class="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                    @click.stop="emit('preview', file)">
-                    <Eye class="w-4 h-4" />
-                </button>
-                <button class="p-2 hover:bg-primary/10 rounded-lg transition-colors text-primary"
-                    @click.stop="emit('open-chat', file)">
-                    <MessageSquare class="w-4 h-4" />
-                </button>
-                <button
-                    class="p-2 hover:bg-green-500/10 rounded-lg transition-colors text-green-600 hover:text-green-700"
-                    @click.stop="emit('open-in-tab', file)">
-                    <ExternalLink class="w-4 h-4" />
-                </button>
-            </div>
-
-            <!-- Dropdown menu (only for files, not folders) -->
-            <Dropdown v-if="!isFolder">
-                <template #trigger>
-                    <button class="p-2 hover:bg-muted rounded-lg transition-colors">
-                        <MoreVertical class="w-4 h-4 text-muted-foreground" />
+            <div
+                class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all translate-x-1 group-hover:translate-x-0">
+                <template v-if="!isFolder">
+                    <button
+                        class="p-2 hover:bg-primary/10 rounded-xl text-muted-foreground hover:text-primary transition-all"
+                        @click.stop="emit('preview', file)">
+                        <Eye class="w-4 h-4" />
+                    </button>
+                    <button
+                        class="p-2 hover:bg-secondary/10 rounded-xl text-muted-foreground hover:text-secondary transition-all"
+                        @click.stop="emit('open-chat', file)">
+                        <MessageSquare class="w-4 h-4" />
                     </button>
                 </template>
-                <DropdownItem @click.stop="emit('share', file)">
-                    <Share2 class="w-4 h-4 mr-2" /> Share
-                </DropdownItem>
-                <DropdownItem @click.stop="emit('download', file)">
-                    <Download class="w-4 h-4 mr-2" /> Download
-                </DropdownItem>
-                <DropdownItem class="text-destructive" @click.stop="emit('delete', file)">
-                    <Trash2 class="w-4 h-4 mr-2" /> Delete
-                </DropdownItem>
-            </Dropdown>
+
+                <!-- Dropdown commented out as requested -->
+                <!-- <Dropdown>
+                    <template #trigger>
+                        <button class="p-2 hover:bg-muted rounded-xl transition-all">
+                            <MoreVertical class="w-4 h-4 text-muted-foreground" />
+                        </button>
+                    </template>
+                    <DropdownItem v-if="!isFolder" @click.stop="emit('share', file)">
+                        <Share2 class="w-4 h-4 mr-2" /> Share
+                    </DropdownItem>
+                    <DropdownItem v-if="!isFolder" @click.stop="emit('download', file)">
+                        <Download class="w-4 h-4 mr-2" /> Download
+                    </DropdownItem>
+                    <DropdownItem class="text-destructive" @click.stop="emit('delete', file)">
+                        <Trash2 class="w-4 h-4 mr-2" /> Delete
+                    </DropdownItem>
+                </Dropdown> -->
+            </div>
         </template>
     </div>
 </template>

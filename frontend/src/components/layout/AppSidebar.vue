@@ -78,71 +78,85 @@ const isActive = (path) => route.path === path
 </script>
 
 <template>
-  <div class="w-64 h-full bg-sidebar border-r border-sidebar-border flex flex-col">
+  <div
+    class="w-64 h-full bg-slate-100/90 dark:bg-slate-950/90 backdrop-blur-xl border-r border-white/10 flex flex-col relative z-50">
     <!-- Logo -->
-    <div class="p-6">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
-          <Cloud class="w-5 h-5" />
+    <div class="p-8">
+      <div class="flex items-center gap-3 transition-transform hover:scale-105 group cursor-pointer">
+        <div
+          class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 group-hover:rotate-6 transition-all">
+          <Cloud class="w-6 h-6" />
         </div>
-        <span class="font-bold text-xl tracking-tight">Smart-Drive</span>
+        <div class="flex flex-col">
+          <span class="font-black text-xl tracking-tighter text-foreground">Smart Drive</span>
+          <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-primary/60">AI Powered</span>
+        </div>
       </div>
     </div>
 
-    <!-- New File Button -->
-
-
     <!-- Navigation -->
-    <nav class="flex-1 px-2 space-y-1">
+    <nav class="flex-1 px-4 space-y-2 mt-4">
       <router-link v-for="item in navItems" :key="item.name" :to="item.path" :class="cn(
-        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+        'group flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300',
         isActive(item.path)
-          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-          : 'text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+          ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20'
+          : 'text-muted-foreground hover:bg-white/10 hover:text-foreground'
       )">
-        <component :is="item.icon" class="w-4 h-4" />
+        <component :is="item.icon"
+          :class="cn('w-5 h-5 transition-transform group-hover:scale-110', isActive(item.path) ? 'text-white' : 'text-primary/70')" />
         <span>{{ item.name }}</span>
       </router-link>
     </nav>
 
     <!-- Bottom Section -->
-    <div class="p-4 border-t border-sidebar-border space-y-4">
+    <div class="p-6 space-y-6">
       <!-- Storage Indicator -->
-      <div class="space-y-2">
-        <div class="flex items-center justify-between text-xs font-medium">
-          <span class="text-muted-foreground">Storage</span>
-          <span>{{ storageGB }} GB of {{ totalGB }} GB</span>
-        </div>
-        <Progress :value="storagePercentage" class="h-2" />
-      </div>
-
-      <!-- User Profile -->
       <div
-        class="flex items-center gap-3 p-3 rounded-lg hover:bg-sidebar-accent transition-colors cursor-pointer group relative"
-        title="User Profile">
-        <div
-          class="w-10 h-10 rounded-full bg-gradient-to-br from-secondary to-accent flex items-center justify-center text-white font-medium shadow-inner group-hover:scale-105 transition-transform">
-          {{ userInitials }}
-        </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium truncate">{{ user.full_name }}</p>
-          <p class="text-xs text-muted-foreground truncate">{{ user.email }}</p>
+        class="relative p-5 rounded-3xl bg-white/5 dark:bg-slate-900/50 border border-white/10 group overflow-hidden">
+        <div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div class="relative z-10 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Cloud Storage</span>
+            <span class="text-[10px] font-black text-foreground">{{ storagePercentage.toFixed(0) }}%</span>
+          </div>
+          <div class="relative h-1.5 w-full bg-muted/30 rounded-full overflow-hidden">
+            <div
+              class="absolute inset-y-0 left-0 bg-primary transition-all duration-1000 ease-out rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)]"
+              :style="{ width: `${storagePercentage}%` }" />
+          </div>
+          <p class="text-[11px] font-bold text-muted-foreground leading-tight">
+            {{ storageGB }} GB <span class="opacity-40">/</span> {{ totalGB }} GB Used
+          </p>
         </div>
       </div>
 
-      <!-- Logout Button -->
-      <button @click="handleLogout"
-        class="flex items-center gap-3 p-3 rounded-lg hover:bg-sidebar-accent transition-colors cursor-pointer group relative w-full text-left"
-        title="Logout">
+      <!-- User Information -->
+      <div class="space-y-3">
+        <!-- Profile -->
         <div
-          class="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white shadow-inner group-hover:scale-105 transition-transform">
-          <LogOut class="w-4 h-4" />
+          class="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/10 transition-all group cursor-pointer border border-transparent hover:border-white/5">
+          <div
+            class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary p-[2px] shadow-lg group-hover:rotate-3 transition-all">
+            <div class="w-full h-full bg-sidebar rounded-[10px] flex items-center justify-center text-xs font-black">
+              {{ userInitials }}
+            </div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-black truncate text-foreground">{{ user.full_name }}</p>
+            <p class="text-[10px] font-medium text-muted-foreground truncate opacity-60">{{ user.email }}</p>
+          </div>
         </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium">Logout</p>
-          <p class="text-xs text-muted-foreground">Sign out of your account</p>
-        </div>
-      </button>
+
+        <!-- Logout -->
+        <button @click="handleLogout"
+          class="w-full flex items-center gap-3 p-3 rounded-2xl text-destructive hover:bg-destructive/10 transition-all border border-transparent hover:border-destructive/20 group">
+          <div
+            class="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center transition-all group-hover:bg-destructive/20">
+            <LogOut class="w-4 h-4" />
+          </div>
+          <span class="text-xs font-black">Sign Out</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>

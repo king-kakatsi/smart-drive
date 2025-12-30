@@ -8,6 +8,8 @@ import UploadModal from '@/components/files/UploadModal.vue'
 import FilePreviewModal from '@/components/files/FilePreviewModal.vue'
 import fileService from '@/services/api/fileService'
 import driveService from '@/services/api/driveService'
+import { Home, ChevronRight, ArrowLeft } from 'lucide-vue-next'
+import { cn } from '@/utils/cn'
 
 const props = defineProps({
   initialFolderPath: {
@@ -231,30 +233,41 @@ onMounted(async () => {
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
     </div>
 
-    <!-- Breadcrumb Navigation -->
-    <div class="mt-4 mb-4 flex items-center justify-between px-4 lg:px-8">
-      <div class="flex items-center gap-2 text-sm">
-        <button @click="handleBreadcrumbClick('/')" class="hover:text-primary transition-colors"
-          :class="{ 'text-primary font-medium': currentPath === '/' }">
-          Home
+    <!-- Breadcrumb & Navigation Bar -->
+    <div
+      class="sticky top-0 z-30 backdrop-blur-md bg-white/40 dark:bg-slate-900/40 border-b border-white/10 px-4 lg:px-8 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-1 overflow-x-auto no-scrollbar py-1">
+        <!-- Root / Home Link -->
+        <button @click="handleBreadcrumbClick('/')" :class="cn(
+          'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap',
+          currentPath === '/'
+            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+        )">
+          <Home class="w-3.5 h-3.5" />
+          <span>Home</span>
         </button>
 
+        <!-- Segment Links -->
         <template v-for="(segment, index) in pathSegments" :key="segment">
-          <span class="text-muted-foreground">/</span>
-          <button @click="handleBreadcrumbClick(getPathUpTo(index))" class="hover:text-primary transition-colors"
-            :class="{
-              'text-primary font-medium': getPathUpTo(index) === currentPath
-            }">
+          <ChevronRight class="w-4 h-4 text-muted-foreground/40 shrink-0" />
+          <button @click="handleBreadcrumbClick(getPathUpTo(index))" :class="cn(
+            'px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border border-transparent',
+            getPathUpTo(index) === currentPath
+              ? 'bg-white dark:bg-slate-800 text-primary shadow-sm border-primary/20'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          )">
             {{ segment }}
           </button>
         </template>
       </div>
 
-      <!-- Navigation Buttons -->
-      <div class="flex items-center gap-2">
+      <!-- Navigation Actions -->
+      <div class="flex items-center gap-2 shrink-0 ml-4">
         <button v-if="folderHistory.length > 1" @click="filesStore.navigateUp()"
-          class="px-3 py-1.5 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors">
-          Back
+          class="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold bg-muted hover:bg-muted/80 rounded-full transition-all border border-border/50 hover:border-border">
+          <ArrowLeft class="w-3.5 h-3.5" />
+          <span>Back</span>
         </button>
       </div>
     </div>
@@ -265,7 +278,8 @@ onMounted(async () => {
       :empty-message="filesStore.searchQuery ? 'No search results found' : 'This folder is empty'"
       :empty-description="filesStore.searchQuery ? 'Try a different keyword.' : 'Upload files or create subfolders to get started.'"
       @open-chat="handleOpenChat" @show-upload="isUploadOpen = true" @preview-file="handlePreviewFile"
-      @open-folder="handleOpenFolder" @open-file="handleOpenFile" @open-in-tab="handleOpenInTab" />
+      @open-folder="handleOpenFolder" @open-file="handleOpenFile" @open-in-tab="handleOpenInTab"
+      @toggle-star="handleToggleStar" />
 
     <!-- Modals -->
     <UploadModal :is-open="isUploadOpen" @close="isUploadOpen = false" />
