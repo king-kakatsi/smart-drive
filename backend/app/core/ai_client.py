@@ -50,22 +50,28 @@ class GroqClient:
                     raise Exception(f"Groq API error: {response.status} - {error_text}")
 
                 if stream:
-                    # Handle streaming response
-                    async for line in response.content:
-                        line = line.decode('utf-8').strip()
-                        if line.startswith('data: '):
-                            data = line[6:]  # Remove 'data: ' prefix
-                            if data == '[DONE]':
-                                break
+                    # Handle streaming response correctly for SSE
+                    while True:
+                        line = await response.content.readline()
+                        if not line:
+                            break
+                        
+                        line_str = line.decode('utf-8').strip()
+                        if not line_str or not line_str.startswith('data: '):
+                            continue
+                            
+                        data = line_str[6:].strip() # Remove 'data: ' prefix
+                        if data == '[DONE]':
+                            break
 
-                            try:
-                                chunk = json.loads(data)
-                                if chunk.get('choices'):
-                                    content = chunk['choices'][0].get('delta', {}).get('content', '')
-                                    if content:
-                                        yield content
-                            except json.JSONDecodeError:
-                                continue
+                        try:
+                            chunk = json.loads(data)
+                            if chunk.get('choices'):
+                                content = chunk['choices'][0].get('delta', {}).get('content', '')
+                                if content:
+                                    yield content
+                        except json.JSONDecodeError:
+                            continue
                 else:
                     # Handle non-streaming response
                     result = await response.json()

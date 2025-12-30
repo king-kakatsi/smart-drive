@@ -49,9 +49,12 @@ export const useChatStore = defineStore('chat', {
         })
       } else if (data.type === 'stream') {
         // Streaming content
-        const lastMessage = this.messages[this.messages.length - 1]
-        if (lastMessage && lastMessage.role === 'assistant') {
-          lastMessage.content += data.content
+        const index = this.messages.length - 1
+        if (index >= 0 && this.messages[index].role === 'assistant') {
+          // Re-assign to ensure reactivity in all Vue versions
+          const updatedMsg = { ...this.messages[index] }
+          updatedMsg.content += (data.content || '')
+          this.messages[index] = updatedMsg
         }
       } else if (data.type === 'source') {
         // Source citation
