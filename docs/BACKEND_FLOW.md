@@ -6,26 +6,12 @@ A deep dive into the structure, data flow, and technology choices of the Smart-D
 The backend is built with **FastAPI**, a high-performance Python web framework, designed to handle asynchronous file processing and real-time AI interactions. It follows a modular architecture that separates API routing, business logic, and core infrastructure clients.
 
 ## High-Level Structure
-```mermaid
-graph TD
-    Entry["Entry Point (app/main.py)"] --> Lifespan["Lifespan Hook (Init DB & Vector Store)"]
-    Entry --> Routers["Routers (app/routers/)"]
-    
-    Routers --> AuthRouter["Auth (JWT/Google OAuth)"]
-    Routers --> FileRouter["Files (CRUD/Upload)"]
-    Routers --> DriveRouter["Drive (Sync/Integration)"]
-    Routers --> ChatRouter["Chat (AI/WebSocket)"]
-    
-    FileRouter --> Services["Services (app/services/)"]
-    FileRouter --> Processors["Processors (app/core/)"]
-    
-    Processors --> DocProc["Document Processor"]
-    Processors --> VidProc["Video Processor"]
-    Processors --> ImgProc["Image Processor"]
-    
-    Processors --> VectorStore["Vector Store (ChromaDB)"]
-    Services --> DB["Database (SQLite)"]
-```
+![Smart-Drive Backend Architecture](./smart-drive-backend-representation.png)
+*Detailed Backend Flow and Processing Logic*
+
+### System Sequence Diagram
+
+![Smart-Drive System Sequence](./smart-drive-sequence-diagram.svg)
 
 ## Data Flow: The Upload Journey
 1.  **Entry**: A file is uploaded via `/api/v1/drive/upload` or `/api/v1/files/upload`.
